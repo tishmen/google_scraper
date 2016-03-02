@@ -18,9 +18,9 @@ class ProxyResource(resources.ModelResource):
     class Meta:
         model = Proxy
         exclude = [
-            'online', 'google_ban', 'last_date_online', 'last_date_google_ban',
-            'region', 'country', 'latitude', 'longitude', 'scraper_count',
-            'date_added', 'date_modified'
+            'online', 'google_ban', 'date_online', 'date_google_ban', 'region',
+            'country', 'latitude', 'longitude', 'scraper_count', 'date_added',
+            'date_modified'
         ]
 
 

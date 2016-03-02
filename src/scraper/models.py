@@ -11,8 +11,16 @@ class UserAgent(models.Model):
 
     date_added = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['-date_added']
+
     def __str__(self):
         return self.string
+
+    @staticmethod
+    def get_random_user_agent():
+        '''return random user agent or None.'''
+        return UserAgent.objects.order_by('?').first()
 
 
 class Proxy(models.Model):
@@ -24,8 +32,8 @@ class Proxy(models.Model):
 
     online = models.NullBooleanField()
     google_ban = models.NullBooleanField()
-    last_date_online = models.DateTimeField(null=True, blank=True)
-    last_date_google_ban = models.DateTimeField(null=True, blank=True)
+    date_online = models.DateTimeField(null=True, blank=True)
+    date_google_ban = models.DateTimeField(null=True, blank=True)
 
     region = models.CharField(max_length=100, null=True, blank=True)
     country = models.CharField(max_length=100, null=True, blank=True)
