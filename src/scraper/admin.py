@@ -28,4 +28,12 @@ class SearchResource(resources.ModelResource):
 
     class Meta:
         model = GoogleSearch
-        exclude = ['date_added']
+        exclude = ['success', 'date_updated', 'date_added']
+
+
+@admin.register(UserAgent)
+class UserAgentAdmin(ImportMixin, admin.ModelAdmin):
+
+    resource_class = UserAgentResource
+    search_fields = ['string']
+    list_display = ['string', 'date_added']

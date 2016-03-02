@@ -146,7 +146,7 @@ CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 djcelery.setup_loader()
 
 
-# App config
+# app config
 
 REQUEST_TIMEOUT = 60
 
