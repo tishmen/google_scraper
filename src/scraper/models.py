@@ -1,6 +1,7 @@
 import random
 import socket
 import string
+import time
 
 from urllib.parse import urlencode
 
@@ -47,8 +48,10 @@ class Proxy(models.Model):
     online = models.NullBooleanField()
     google_ban = models.NullBooleanField()
 
-    region = models.CharField(max_length=100, null=True, blank=True)
-    country = models.CharField(max_length=100, null=True, blank=True)
+    speed = models.FloatField(null=True, blank=True)
+
+    city = models.TextField(null=True, blank=True)
+    country = models.TextField(null=True, blank=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
 
@@ -151,14 +154,26 @@ class Proxy(models.Model):
         scraper.do_request()
         search.delete()
 
+    def speed_check(self):
+        '''create connection to the proxy server and record speed'''
+        print('starting speed check for {}'.format(self))
+        start = time.time()
+        self.online_check()
+        self.speed = time.time() - start
+        self.save()
+
     def geoip_check(self):
         '''query geoip database if no previous record exists'''
         if self.region or self.country or self.latitude or self.longitude:
             return
         print('starting geoip check for {}'.format(self))
-        geoip = GeoIP.new(GeoIP.GEOIP_STANDARD)
+        geoip = GeoIP.open(
+            '/usr/local/share/GeoIP/GeoLiteCity.dat', GeoIP.GEOIP_STANDARD
+        )
         record = geoip.record_by_addr(self.host)
-        self.region = record['region_name']
+        if not record:
+            return
+        self.city = record['city']
         self.country = record['country_name']
         self.latitude = record['latitude']
         self.longitude = record['longitude']

@@ -18,9 +18,9 @@ class ProxyResource(resources.ModelResource):
     class Meta:
         model = Proxy
         exclude = [
-            'online', 'google_ban', 'date_online', 'date_google_ban', 'region',
-            'country', 'latitude', 'longitude', 'scraper_count', 'date_added',
-            'date_modified'
+            'online', 'google_ban', 'date_online', 'date_google_ban', 'speed',
+            'region', 'country', 'latitude', 'longitude', 'scraper_count',
+            'date_added', 'date_modified'
         ]
 
 
@@ -37,3 +37,11 @@ class UserAgentAdmin(ImportMixin, admin.ModelAdmin):
     resource_class = UserAgentResource
     search_fields = ['string']
     list_display = ['string', 'date_added']
+
+
+@admin.register(Proxy)
+class ProxyAdmin(ImportMixin, admin.ModelAdmin):
+
+    resource_class = ProxyResource
+    search_fields = ['__str__']
+    list_display = ['__str__']
