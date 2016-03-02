@@ -18,9 +18,12 @@ class UserAgent(models.Model):
         return self.string
 
     @staticmethod
-    def get_random_user_agent():
-        '''return random user agent or None.'''
-        return UserAgent.objects.order_by('?').first()
+    def get_user_agent_string():
+        '''return user agent or None.'''
+        try:
+            return UserAgent.objects.order_by('?').first().string
+        except:
+            print('no user agents in database')
 
 
 class Proxy(models.Model):
