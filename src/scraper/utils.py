@@ -184,10 +184,14 @@ class GoogleScraper(object):
         print('scraping for query {}'.format(self.search))
         while True:
             self.do_request()
+            if not self.response:
+                self.search.unset_success()
+                break
             self.create_page()
             self.create_links()
             if not self.page.next_page:
                 print('reached last page for query {}'.format(self.search))
+                self.search.set_success()
                 break
             self.url = self.page.next_page
             self.start += settings.RESULTS_PER_PAGE

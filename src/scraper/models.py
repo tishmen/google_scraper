@@ -20,11 +20,7 @@ class UserAgent(models.Model):
     '''database record for user agent'''
 
     string = models.TextField(unique=True)
-
     date_added = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-date_added']
 
     def __str__(self):
         return self.string
@@ -44,19 +40,14 @@ class Proxy(models.Model):
 
     host = models.GenericIPAddressField(protocol='IPv4')
     port = models.PositiveIntegerField()
-
     online = models.NullBooleanField()
     google_ban = models.NullBooleanField()
-
     speed = models.FloatField(null=True, blank=True)
-
     city = models.TextField(null=True, blank=True)
     country = models.TextField(null=True, blank=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
-
     scraper_count = models.PositiveIntegerField(default=0)
-
     date_added = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     date_online = models.DateTimeField(null=True, blank=True)
@@ -65,7 +56,6 @@ class Proxy(models.Model):
     class Meta:
         verbose_name_plural = 'proxies'
         unique_together = ['host', 'port']
-        ordering = ['-date_updated']
 
     def __str__(self):
         return '{}:{}'.format(self.host, self.port)
@@ -100,19 +90,21 @@ class Proxy(models.Model):
             )
         )
 
-    def set_online(self):
+    def set_online(self, do_save=True):
         '''set proxy status to online'''
         if not self.online:
             self.online = True
         self.date_online = timezone.now()
-        self.save()
+        if do_save:
+            self.save()
         print('proxy {} is online'.format(self))
 
-    def unset_online(self):
+    def unset_online(self, do_save=True):
         '''set proxy status to offline'''
-        if self.online:
+        if self.online is not False:
             self.online = False
-            self.save()
+            if do_save:
+                self.save()
         print('proxy {} is not online'.format(self))
 
     def set_google_ban(self):
@@ -125,20 +117,35 @@ class Proxy(models.Model):
 
     def unset_google_ban(self):
         '''set proxy status to unbanned'''
-        if self.google_ban:
+        if self.google_ban is not False:
             self.google_ban = False
             self.save()
         print('proxy {} is not banned by google'.format(self))
 
+    def set_speed(self, time):
+        '''set proxy speed to value'''
+        self.speed = time
+        self.save()
+        print('proxy {} speed is {}'.format(self, self.speed))
+
+    def unset_speed(self):
+        '''set proxy speed to None'''
+        self.speed = None
+        self.save()
+
     def online_check(self):
         '''create connection to the proxy server and record status'''
         print('starting online check for {}'.format(self))
+        start = time.time()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(settings.PROXY_TIMEOUT)
         try:
             sock.connect((self.host, self.port))
-            self.set_online()
-        except socket.error:
-            self.unset_online()
+            self.set_online(do_save=False)
+            self.set_speed(time.time() - start)
+        except (socket.error, socket.timeout):
+            self.unset_online(do_save=False)
+            self.unset_speed()
 
     def google_ban_check(self):
         '''send random query to google and record status'''
@@ -153,14 +160,6 @@ class Proxy(models.Model):
         )
         scraper.do_request()
         search.delete()
-
-    def speed_check(self):
-        '''create connection to the proxy server and record speed'''
-        print('starting speed check for {}'.format(self))
-        start = time.time()
-        self.online_check()
-        self.speed = time.time() - start
-        self.save()
 
     def geoip_check(self):
         '''query geoip database if no previous record exists'''
@@ -179,23 +178,6 @@ class Proxy(models.Model):
         self.longitude = record['longitude']
         self.save()
 
-    def _speed(self):
-        '''admin changelist'''
-        if self.speed:
-            return self.speed + 'ms'
-
-    _speed.short_description = 'speed'
-    _speed.admin_order_field = 'speed'
-
-    def region(self):
-        geo = ''
-        if self.city:
-            geo = self.city + ', '
-        return geo + self.country
-
-    region.short_description = 'region'
-    region.admin_order_field = 'country'
-
 
 class GoogleSearch(models.Model):
 
@@ -209,18 +191,27 @@ class GoogleSearch(models.Model):
     qdr = models.CharField(
         verbose_name='time period', max_length=3, null=True, blank=True
     )
-
     success = models.NullBooleanField()
-
     date_added = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name_plural = 'google searches'
-        ordering = ['-date_updated']
 
     def __str__(self):
         return self.q
+
+    def set_success(self):
+        '''set google search success to True'''
+        self.success = True
+        self.save()
+        print('google search for query {} succeded')
+
+    def unset_success(self):
+        '''set google search success to False'''
+        self.success = False
+        self.save()
+        print('google search for query {} failed')
 
     def get_GET_params(self):
         '''return GET params to be added to google search url'''
@@ -263,11 +254,7 @@ class GooglePage(models.Model):
     start = models.PositiveIntegerField(default=0)
     end = models.PositiveIntegerField(default=0)
     next_page = models.URLField(null=True, blank=True)
-
     date_added = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-date_added']
 
     def __str__(self):
         return self.url
@@ -282,11 +269,7 @@ class GoogleLink(models.Model):
     snippet = models.TextField()
     url = models.URLField()
     rank = models.IntegerField()
-
     date_added = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-date_added']
 
     def __str__(self):
         return self.title

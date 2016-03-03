@@ -46,7 +46,7 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
     resource_class = ProxyResource
     search_fields = ['__str__']
     list_display = [
-        '__str__', 'online', 'google_ban', '_speed', 'region', 'scraper_count',
+        '__str__', 'online', 'google_ban', 'speed', 'country', 'scraper_count',
         'date_updated'
     ]
     list_filter = ['online', 'google_ban']
@@ -55,12 +55,10 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
         'latitude', 'longitude', 'scraper_count', 'date_added', 'date_updated',
         'date_online', 'date_google_ban'
     ]
-    actions = [
-        'online_check_action', 'google_ban_check_action', 'speed_check_action'
-    ]
+    actions = ['online_check_action', 'google_ban_check_action']
 
-    def has_add_permission(self, request):
-        return False
+    # def has_add_permission(self, request):
+    #     return False
 
     def online_check_action(self, request, queryset):
         count = queryset.count()
@@ -93,18 +91,3 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
 
     google_ban_check_action.short_description = 'Check if selected proxies ar'\
         'e banned by Google'
-
-    def speed_check_action(self, request, queryset):
-        count = queryset.count()
-        speed_check_task.delay(queryset)
-        if count == 1:
-            part = '1 proxy'
-        else:
-            part = '{} proxies'.format(count)
-        self.message_user(
-            request,
-            'Successfully launched speed_check_task for ' + part,
-            level=messages.SUCCESS
-        )
-
-    speed_check_action.short_description = 'Check selected proxies speed'

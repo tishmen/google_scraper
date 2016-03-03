@@ -148,6 +148,8 @@ djcelery.setup_loader()
 
 # app config
 
+PROXY_TIMEOUT = 10
+
 REQUEST_TIMEOUT = 60
 
 RETRY_TIMEOUT = 60
