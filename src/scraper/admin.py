@@ -57,6 +57,8 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
     ]
     actions = ['online_check_action', 'google_ban_check_action']
 
+    # raise an issue on github. ImportMixin does not show import button if user
+    # has no add permission
     # def has_add_permission(self, request):
     #     return False
 
