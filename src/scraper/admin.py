@@ -1,9 +1,10 @@
 from import_export import resources
 from import_export.admin import ImportMixin
 
-from django.contrib import admin
+from django.contrib import admin, messages
 
 from .models import UserAgent, Proxy, GoogleSearch, GooglePage, GoogleLink
+from .tasks import online_check_task, google_ban_check_task, speed_check_task
 
 
 class UserAgentResource(resources.ModelResource):
@@ -19,8 +20,8 @@ class ProxyResource(resources.ModelResource):
         model = Proxy
         exclude = [
             'online', 'google_ban', 'date_online', 'date_google_ban', 'speed',
-            'region', 'country', 'latitude', 'longitude', 'scraper_count',
-            'date_added', 'date_modified'
+            'city', 'country', 'latitude', 'longitude', 'scraper_count',
+            'date_added', 'date_updated'
         ]
 
 
@@ -44,4 +45,66 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
 
     resource_class = ProxyResource
     search_fields = ['__str__']
-    list_display = ['__str__']
+    list_display = [
+        '__str__', 'online', 'google_ban', '_speed', 'region', 'scraper_count',
+        'date_updated'
+    ]
+    list_filter = ['online', 'google_ban']
+    readonly_fields = [
+        'host', 'port', 'online', 'google_ban', 'speed', 'city', 'country',
+        'latitude', 'longitude', 'scraper_count', 'date_added', 'date_updated',
+        'date_online', 'date_google_ban'
+    ]
+    actions = [
+        'online_check_action', 'google_ban_check_action', 'speed_check_action'
+    ]
+
+    def has_add_permission(self, request):
+        return False
+
+    def online_check_action(self, request, queryset):
+        count = queryset.count()
+        online_check_task.delay(queryset)
+        if count == 1:
+            part = '1 proxy'
+        else:
+            part = '{} proxies'.format(count)
+        self.message_user(
+            request,
+            'Successfully launched online_check_task for ' + part,
+            level=messages.SUCCESS
+        )
+
+    online_check_action.short_description = 'Check if selected proxies are on'\
+        'line'
+
+    def google_ban_check_action(self, request, queryset):
+        count = queryset.count()
+        google_ban_check_task.delay(queryset)
+        if count == 1:
+            part = '1 proxy'
+        else:
+            part = '{} proxies'.format(count)
+        self.message_user(
+            request,
+            'Successfully launched google_ban_check_task for ' + part,
+            level=messages.SUCCESS
+        )
+
+    google_ban_check_action.short_description = 'Check if selected proxies ar'\
+        'e banned by Google'
+
+    def speed_check_action(self, request, queryset):
+        count = queryset.count()
+        speed_check_task.delay(queryset)
+        if count == 1:
+            part = '1 proxy'
+        else:
+            part = '{} proxies'.format(count)
+        self.message_user(
+            request,
+            'Successfully launched speed_check_task for ' + part,
+            level=messages.SUCCESS
+        )
+
+    speed_check_action.short_description = 'Check selected proxies speed'

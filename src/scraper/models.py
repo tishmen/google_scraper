@@ -164,7 +164,7 @@ class Proxy(models.Model):
 
     def geoip_check(self):
         '''query geoip database if no previous record exists'''
-        if self.region or self.country or self.latitude or self.longitude:
+        if self.city or self.country or self.latitude or self.longitude:
             return
         print('starting geoip check for {}'.format(self))
         geoip = GeoIP.open(
@@ -178,6 +178,23 @@ class Proxy(models.Model):
         self.latitude = record['latitude']
         self.longitude = record['longitude']
         self.save()
+
+    def _speed(self):
+        '''admin changelist'''
+        if self.speed:
+            return self.speed + 'ms'
+
+    _speed.short_description = 'speed'
+    _speed.admin_order_field = 'speed'
+
+    def region(self):
+        geo = ''
+        if self.city:
+            geo = self.city + ', '
+        return geo + self.country
+
+    region.short_description = 'region'
+    region.admin_order_field = 'country'
 
 
 class GoogleSearch(models.Model):
