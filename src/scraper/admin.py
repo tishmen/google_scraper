@@ -31,6 +31,31 @@ class GoogleSearchResource(resources.ModelResource):
         exclude = ['success', 'date_updated', 'date_added']
 
 
+class ReadOnlyInline(admin.TabularInline):
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class GooglePageInline(ReadOnlyInline):
+
+    model = GooglePage
+    exclude = ['html', 'start', 'end', 'next_page']
+    readonly_fields = ['url', 'date_added']
+    extra = 0
+
+
+class GoogleLinkInline(ReadOnlyInline):
+
+    model = GoogleLink
+    exclude = ['snippet', 'rank']
+    readonly_fields = ['url', 'title', 'date_added']
+    extra = 0
+
+
 class ReadOnlyAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request, obj=None):
@@ -121,6 +146,7 @@ class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
     list_filter = ['success']
     actions = ['search_action']
     exclude = ['success']
+    inlines = [GooglePageInline]
 
     def add_view(self, request, extra_content=None):
         self.readonly_fields = []
@@ -153,14 +179,16 @@ class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
 @admin.register(GooglePage)
 class GooglePageAdmin(ReadOnlyAdmin):
 
+    list_display = ['url', 'date_added']
     readonly_fields = ['url', 'html', 'start', 'end', 'next_page']
     exclude = ['search']
+    inlines = [GoogleLinkInline]
 
 
 @admin.register(GoogleLink)
 class GoogleLinkAdmin(ReadOnlyAdmin):
 
     search_fields = ['title']
-    list_display = ['url', 'title']
+    list_display = ['url', 'title', 'date_added']
     readonly_fields = ['url', 'title', 'snippet', 'rank']
     exclude = ['page']

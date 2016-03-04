@@ -182,7 +182,7 @@ class GoogleScraper(object):
     def scrape(self):
         '''main scrape call'''
         print('scraping for query {}'.format(self.search))
-        while True:
+        for _ in range(settings.MAX_PAGE):
             self.do_request()
             if not self.response:
                 self.search.unset_success()
