@@ -14,12 +14,6 @@ def _google_ban_check_task(self, proxy):
 
 
 @shared_task(bind=True)
-def _speed_check_task(self, proxy):
-    '''call speed check on proxy object'''
-    proxy.speed_check()
-
-
-@shared_task(bind=True)
 def _search_task(self, google_search):
     '''call search on google search object'''
     google_search.search()
@@ -41,14 +35,6 @@ def google_ban_check_task(self, proxies):
     )
     for proxy in proxies:
         _google_ban_check_task.delay(proxy)
-
-
-@shared_task(bind=True)
-def speed_check_task(self, proxies):
-    '''process speed check tasks async'''
-    print('starting speed_check_task for {} proxies'.format(proxies.count()))
-    for proxy in proxies:
-        _speed_check_task.delay(proxy)
 
 
 @shared_task(bind=True)

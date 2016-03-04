@@ -1,3 +1,4 @@
+from datetime import date
 import random
 import socket
 import string
@@ -43,10 +44,7 @@ class Proxy(models.Model):
     online = models.NullBooleanField()
     google_ban = models.NullBooleanField()
     speed = models.FloatField(null=True, blank=True)
-    city = models.TextField(null=True, blank=True)
     country = models.TextField(null=True, blank=True)
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
     scraper_count = models.PositiveIntegerField(default=0)
     date_added = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
@@ -61,7 +59,7 @@ class Proxy(models.Model):
         return '{}:{}'.format(self.host, self.port)
 
     def save(self, *args, **kwargs):
-        self.geoip_check()
+        self.country_check()
         super(Proxy, self).save(*args, **kwargs)
 
     @staticmethod
@@ -161,9 +159,9 @@ class Proxy(models.Model):
         scraper.do_request()
         search.delete()
 
-    def geoip_check(self):
-        '''query geoip database if no previous record exists'''
-        if self.city or self.country or self.latitude or self.longitude:
+    def country_check(self):
+        '''query geoip database for proxy country'''
+        if self.country:
             return
         print('starting geoip check for {}'.format(self))
         geoip = GeoIP.open(
@@ -172,10 +170,7 @@ class Proxy(models.Model):
         record = geoip.record_by_addr(self.host)
         if not record:
             return
-        self.city = record['city']
         self.country = record['country_name']
-        self.latitude = record['latitude']
-        self.longitude = record['longitude']
         self.save()
 
 
@@ -188,9 +183,8 @@ class GoogleSearch(models.Model):
         verbose_name='country', max_length=9, choices=SEARCH_CR,
         default='countryUS'
     )
-    qdr = models.CharField(
-        verbose_name='time period', max_length=3, null=True, blank=True
-    )
+    cd_min = models.DateField(verbose_name='date start', null=True, blank=True)
+    cd_max = models.DateField(verbose_name='date end', null=True, blank=True)
     success = models.NullBooleanField()
     date_added = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
@@ -200,6 +194,11 @@ class GoogleSearch(models.Model):
 
     def __str__(self):
         return self.q
+
+    def save(self, *args, **kwargs):
+        if self.cd_min and not self.cd_max:
+            self.cd_max = date.today()
+        super(GoogleSearch, self).save(*args, **kwargs)
 
     def set_success(self):
         '''set google search success to True'''
@@ -218,11 +217,14 @@ class GoogleSearch(models.Model):
         params = {'hl': 'en', 'nfpr': '1'}
         if settings.RESULTS_PER_PAGE != 10:
             params['num'] = str(settings.RESULTS_PER_PAGE)
-        if self.qdr:
-            params['tbs'] = 'qdr:{}'.format(self.qdr)
+        if self.cd_min and self.cd_max:
+            params['tbs'] = 'cdr:1,cd_min:{},cd_max:{}'.format(
+                self.cd_min, self.cd_max
+            )
         for field in self._meta.get_fields():
             name = field.name
-            if name in ['id', 'date_added']:
+            if name in ['id', 'cd_min', 'cd_max', 'success', 'date_added',
+                        'date_updated']:
                 continue
             value = getattr(self, name)
             if not value:

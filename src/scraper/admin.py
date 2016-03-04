@@ -4,7 +4,7 @@ from import_export.admin import ImportMixin
 from django.contrib import admin, messages
 
 from .models import UserAgent, Proxy, GoogleSearch, GooglePage, GoogleLink
-from .tasks import online_check_task, google_ban_check_task, speed_check_task
+from .tasks import online_check_task, google_ban_check_task, search_task
 
 
 class UserAgentResource(resources.ModelResource):
@@ -20,12 +20,11 @@ class ProxyResource(resources.ModelResource):
         model = Proxy
         exclude = [
             'online', 'google_ban', 'date_online', 'date_google_ban', 'speed',
-            'city', 'country', 'latitude', 'longitude', 'scraper_count',
-            'date_added', 'date_updated'
+            'country', 'scraper_count', 'date_added', 'date_updated'
         ]
 
 
-class SearchResource(resources.ModelResource):
+class GoogleSearchResource(resources.ModelResource):
 
     class Meta:
         model = GoogleSearch
@@ -50,17 +49,7 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
         'date_updated'
     ]
     list_filter = ['online', 'google_ban']
-    readonly_fields = [
-        'host', 'port', 'online', 'google_ban', 'speed', 'city', 'country',
-        'latitude', 'longitude', 'scraper_count', 'date_added', 'date_updated',
-        'date_online', 'date_google_ban'
-    ]
     actions = ['online_check_action', 'google_ban_check_action']
-
-    # raise an issue on github. ImportMixin does not show import button if user
-    # has no add permission
-    # def has_add_permission(self, request):
-    #     return False
 
     def online_check_action(self, request, queryset):
         count = queryset.count()
@@ -93,3 +82,28 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
 
     google_ban_check_action.short_description = 'Check if selected proxies ar'\
         'e banned by Google'
+
+
+@admin.register(GoogleSearch)
+class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
+
+    resource_class = GoogleSearchResource
+    search_fields = ['q']
+    list_display = ['q', 'cr', 'cd_min', 'cd_max', 'success', 'date_updated']
+    list_filter = ['success']
+    actions = ['search_action']
+
+    def search_action(self, request, queryset):
+        count = queryset.count()
+        search_task.delay(queryset)
+        if count == 1:
+            part = '1 search'
+        else:
+            part = '{} searches'.format(count)
+        self.message_user(
+            request,
+            'Successfully launched search_task for ' + part,
+            level=messages.SUCCESS
+        )
+
+    search_action.short_description = 'Search Google for selected searches'
