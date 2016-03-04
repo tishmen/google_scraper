@@ -258,9 +258,9 @@ class GoogleLink(models.Model):
     '''database record for google link'''
 
     page = models.ForeignKey('GooglePage')
+    url = models.URLField()
     title = models.CharField(max_length=100)
     snippet = models.TextField()
-    url = models.URLField()
     rank = models.IntegerField()
     date_added = models.DateTimeField(auto_now_add=True)
 

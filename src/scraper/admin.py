@@ -31,6 +31,15 @@ class GoogleSearchResource(resources.ModelResource):
         exclude = ['success', 'date_updated', 'date_added']
 
 
+class ReadOnlyAdmin(admin.ModelAdmin):
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(UserAgent)
 class UserAgentAdmin(ImportMixin, admin.ModelAdmin):
 
@@ -142,12 +151,16 @@ class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
 
 
 @admin.register(GooglePage)
-class GooglePageAdmin(admin.ModelAdmin):
+class GooglePageAdmin(ReadOnlyAdmin):
 
-    pass
+    readonly_fields = ['url', 'html', 'start', 'end', 'next_page']
+    exclude = ['search']
 
 
 @admin.register(GoogleLink)
-class GoogleLinkAdmin(admin.ModelAdmin):
+class GoogleLinkAdmin(ReadOnlyAdmin):
 
-    pass
+    search_fields = ['title']
+    list_display = ['url', 'title']
+    readonly_fields = ['url', 'title', 'snippet', 'rank']
+    exclude = ['page']
