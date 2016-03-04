@@ -52,20 +52,20 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
     actions = ['online_check_action', 'google_ban_check_action']
 
     def add_view(self, request, extra_content=None):
+        self.readonly_fields = []
         self.exclude = [
             'online', 'google_ban', 'speed', 'country', 'scraper_count',
             'date_added', 'date_updated', 'date_online', 'date_google_ban'
         ]
-        self.readonly_fields = []
         return super(ProxyAdmin, self).add_view(request)
 
     def change_view(self, request, object_id, extra_content=None):
+        self.exclude = []
         self.readonly_fields = [
             'host', 'port', 'online', 'google_ban', 'speed', 'country',
             'scraper_count', 'date_added', 'date_updated', 'date_online',
             'date_google_ban'
         ]
-        self.exclude = []
         return super(ProxyAdmin, self).change_view(request, object_id)
 
     def online_check_action(self, request, queryset):
@@ -111,6 +111,18 @@ class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
     list_display = ['q', 'cr', 'cd_min', 'cd_max', 'success', 'date_updated']
     list_filter = ['success']
     actions = ['search_action']
+    exclude = ['success']
+
+    def add_view(self, request, extra_content=None):
+        self.readonly_fields = []
+        return super(GoogleSearchAdmin, self).add_view(request)
+
+    def change_view(self, request, object_id, extra_content=None):
+        obj = GoogleSearch.objects.get(id=object_id)
+        if obj.success:
+            self.exclude = []
+            self.readonly_fields = ['q', 'cr', 'cd_min', 'cd_max', 'success']
+        return super(GoogleSearchAdmin, self).change_view(request, object_id)
 
     def search_action(self, request, queryset):
         '''google search admin action'''
