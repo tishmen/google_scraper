@@ -1,9 +1,9 @@
-from datetime import date
 import random
 import socket
 import string
 import time
 
+from datetime import date
 from urllib.parse import urlencode
 
 import GeoIP
@@ -212,8 +212,8 @@ class GoogleSearch(models.Model):
         self.save()
         print('google search for query {} failed')
 
-    def get_GET_params(self):
-        '''return GET params to be added to google search url'''
+    def get_query_params(self):
+        '''return query params to be added to google search url'''
         params = {'q': self.q, 'cr': self.cr, 'hl': 'en', 'nfpr': '1'}
         if settings.RESULTS_PER_PAGE != 10:
             params['num'] = str(settings.RESULTS_PER_PAGE)
@@ -227,7 +227,7 @@ class GoogleSearch(models.Model):
     def url(self):
         '''google search url for query'''
         base = 'https://www.google.com/search?'
-        return base + urlencode(self.get_GET_params())
+        return base + urlencode(self.get_query_params())
 
     def search(self):
         '''search call on GoogleScraper object'''
