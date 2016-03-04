@@ -142,12 +142,12 @@ class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
 
 
 @admin.register(GooglePage)
-class GooglePageAdmin(ImportMixin, admin.ModelAdmin):
+class GooglePageAdmin(admin.ModelAdmin):
 
     pass
 
 
 @admin.register(GoogleLink)
-class GoogleLinkAdmin(ImportMixin, admin.ModelAdmin):
+class GoogleLinkAdmin(admin.ModelAdmin):
 
     pass
