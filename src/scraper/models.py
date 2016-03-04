@@ -214,22 +214,13 @@ class GoogleSearch(models.Model):
 
     def get_GET_params(self):
         '''return GET params to be added to google search url'''
-        params = {'hl': 'en', 'nfpr': '1'}
+        params = {'q': self.q, 'cr': self.cr, 'hl': 'en', 'nfpr': '1'}
         if settings.RESULTS_PER_PAGE != 10:
             params['num'] = str(settings.RESULTS_PER_PAGE)
         if self.cd_min and self.cd_max:
-            params['tbs'] = 'cdr:1,cd_min:{},cd_max:{}'.format(
-                self.cd_min, self.cd_max
-            )
-        for field in self._meta.get_fields():
-            name = field.name
-            if name in ['id', 'cd_min', 'cd_max', 'success', 'date_added',
-                        'date_updated']:
-                continue
-            value = getattr(self, name)
-            if not value:
-                continue
-            params[name] = value
+            cd_min = self.cd_min.strftime('%m/%d/%Y')
+            cd_max = self.cd_max.strftime('%m/%d/%Y')
+            params['tbs'] = 'cdr:1,cd_min:{},cd_max:{}'.format(cd_min, cd_max)
         return params
 
     @property
