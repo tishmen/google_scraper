@@ -51,7 +51,25 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
     list_filter = ['online', 'google_ban']
     actions = ['online_check_action', 'google_ban_check_action']
 
+    def add_view(self, request, extra_content=None):
+        self.exclude = [
+            'online', 'google_ban', 'speed', 'country', 'scraper_count',
+            'date_added', 'date_updated', 'date_online', 'date_google_ban'
+        ]
+        self.readonly_fields = []
+        return super(ProxyAdmin, self).add_view(request)
+
+    def change_view(self, request, object_id, extra_content=None):
+        self.readonly_fields = [
+            'host', 'port', 'online', 'google_ban', 'speed', 'country',
+            'scraper_count', 'date_added', 'date_updated', 'date_online',
+            'date_google_ban'
+        ]
+        self.exclude = []
+        return super(ProxyAdmin, self).change_view(request, object_id)
+
     def online_check_action(self, request, queryset):
+        '''online check admin action'''
         count = queryset.count()
         online_check_task.delay(queryset)
         if count == 1:
@@ -68,6 +86,7 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
         'line'
 
     def google_ban_check_action(self, request, queryset):
+        '''google ban check admin action'''
         count = queryset.count()
         google_ban_check_task.delay(queryset)
         if count == 1:
@@ -94,6 +113,7 @@ class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
     actions = ['search_action']
 
     def search_action(self, request, queryset):
+        '''google search admin action'''
         count = queryset.count()
         search_task.delay(queryset)
         if count == 1:
