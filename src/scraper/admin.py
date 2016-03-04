@@ -139,3 +139,15 @@ class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
         )
 
     search_action.short_description = 'Search Google for selected searches'
+
+
+@admin.register(GooglePage)
+class GooglePageAdmin(ImportMixin, admin.ModelAdmin):
+
+    pass
+
+
+@admin.register(GoogleLink)
+class GoogleLinkAdmin(ImportMixin, admin.ModelAdmin):
+
+    pass
