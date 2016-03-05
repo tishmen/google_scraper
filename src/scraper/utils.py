@@ -68,7 +68,7 @@ class GoogleScraper(object):
 
     def __init__(self, search, user_agent=None, proxy=None):
         self.url = search.url
-        self.start = 1
+        self.start = 0
         self.search = search
         self.user_agent = user_agent
 
@@ -147,7 +147,7 @@ class GoogleScraper(object):
 
     def get_end(self):
         '''returns end result index'''
-        return self.start + settings.RESULTS_PER_PAGE
+        return self.start + len(self.links)
 
     def create_page(self):
         '''creates GooglePage entry in database'''
@@ -192,4 +192,4 @@ class GoogleScraper(object):
                 self.search.set_success()
                 break
             self.url = self.page.next_page
-            self.start += settings.RESULTS_PER_PAGE
+            self.start = self.get_end()
