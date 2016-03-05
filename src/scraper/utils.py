@@ -58,7 +58,7 @@ class GoogleParser(object):
         '''returns next page url or None'''
         try:
             return self.parse_next_page()
-        except IndexError:
+        except KeyError:
             pass
 
 
