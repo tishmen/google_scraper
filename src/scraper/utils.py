@@ -1,7 +1,6 @@
 import time
 
-from urllib.parse import urlparse, parse_qs
-
+import htmlmin
 import requests
 
 from bs4 import BeautifulSoup
@@ -16,14 +15,13 @@ class GoogleParser(object):
     def __init__(self, response):
         self.soup = BeautifulSoup(response.content, 'html.parser')
 
-    def parse_next_page(self):
-        '''returns next page url or exception'''
-        return 'https://www.google.com' + \
-            self.soup.select('.b > .fl')[0]['href']
-
     def parse_links(self):
         '''returns result nodes that contain snippet node'''
-        return [node.parent for node in self.soup.select('.g .s')]
+        return [node.parent for node in self.soup.select('.srg .rc')]
+
+    def parse_url(self, node):
+        '''returns title url from result node'''
+        return node.a['href']
 
     def parse_title(self, node):
         '''returns title text from result node'''
@@ -33,28 +31,21 @@ class GoogleParser(object):
         '''returns snippet text from result node'''
         return node.select_one('.st').get_text()
 
-    def parse_url(self, node):
-        '''returns title url from result node'''
-        return parse_qs(urlparse(node.a['href']).query)['q']
-
     def parse_link(self, node):
         '''returns parsed link dictionary'''
         return {
+            'url': self.parse_url(node),
             'title': self.parse_title(node),
             'snippet': self.parse_snippet(node),
-            'url': self.parse_url(node),
         }
 
-    def get_html(self):
-        '''returns prettyfied html from soup'''
-        return self.soup.prettify()
+    def parse_next_page(self):
+        '''returns next page url or exception'''
+        return 'https://www.google.com' + self.soup.select_one('.pn')['href']
 
-    def get_next_page(self):
-        '''returns next page url or None'''
-        try:
-            return self.parse_next_page()
-        except IndexError:
-            pass
+    def get_html(self):
+        '''returns minifyfied html from soup'''
+        return htmlmin.minify(str(self.soup))
 
     def get_links(self):
         '''returns parsed link dictionaries'''
@@ -62,6 +53,13 @@ class GoogleParser(object):
         for node in self.parse_links():
             links.append(self.parse_link(node))
         return links
+
+    def get_next_page(self):
+        '''returns next page url or None'''
+        try:
+            return self.parse_next_page()
+        except IndexError:
+            pass
 
 
 class GoogleScraper(object):
@@ -157,7 +155,7 @@ class GoogleScraper(object):
         self.page = GooglePage.objects.create(
             search=self.search,
             url=self.url,
-            html=self.get_html(),
+            html=self.parser.get_html(),
             start=self.start,
             end=self.get_end(),
             next_page=self.parser.get_next_page()
