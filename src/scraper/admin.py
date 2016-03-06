@@ -53,6 +53,7 @@ class GooglePageInline(ReadOnlyInline):
     show_change_link = True
 
     def _url(self, obj):
+        '''google page admin change list url'''
         url = reverse(
             'admin:{}_{}_change'.format(
                 obj._meta.app_label, obj._meta.model_name
@@ -72,6 +73,7 @@ class GoogleLinkInline(ReadOnlyInline):
     extra = 0
 
     def _title(self, obj):
+        '''google link admin change list url'''
         url = reverse(
             'admin:{}_{}_change'.format(
                 obj._meta.app_label, obj._meta.model_name
@@ -83,6 +85,7 @@ class GoogleLinkInline(ReadOnlyInline):
     _title.allow_tags = True
 
     def _url(self, obj):
+        '''search result url'''
         return '<a href="{0}" target="_blank">{0}</a>'.format(obj.url)
 
     _url.allow_tags = True
@@ -90,6 +93,7 @@ class GoogleLinkInline(ReadOnlyInline):
 
 class NoInlineTitleAdmin(admin.ModelAdmin):
 
+    # http://stackoverflow.com/questions/5086537/how-to-omit-object-name-from-djangos-tabularinline-admin-view
     def render_change_form(self, request, context, *args, **kwargs):
         def get_queryset(original_func):
             def wrapped_func():
@@ -129,27 +133,35 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
     resource_class = ProxyResource
     search_fields = ['__str__']
     list_display = [
-        '__str__', 'online', 'google_ban', 'speed', 'country', 'scraper_count',
+        '__str__', 'scraper_count', 'online', 'google_ban', 'speed', 'country',
         'date_updated'
     ]
     list_filter = ['online', 'google_ban']
     actions = ['online_check_action', 'google_ban_check_action']
 
     def add_view(self, request, extra_content=None):
-        self.exclude = [
-            'online', 'google_ban', 'speed', 'country', 'scraper_count',
-            'date_added', 'date_updated', 'date_online', 'date_google_ban'
-        ]
+        self.fieldsets = [[None, {'fields': ['host', 'port']}]]
         self.readonly_fields = []
         return super().add_view(request)
 
     def change_view(self, request, object_id, extra_content=None):
-        self.readonly_fields = [
-            'host', 'port', 'online', 'google_ban', 'speed', 'country',
-            'scraper_count', 'date_added', 'date_updated', 'date_online',
-            'date_google_ban'
+        self.fieldsets = [
+            [None, {'fields': ['host', 'port', 'scraper_count']}],
+            [
+                'Status', {
+                    'classes': ['collapse'],
+                    'fields': [
+                        'online', 'google_ban', 'speed', 'date_online',
+                        'date_google_ban'
+                    ]
+                }
+            ],
+            ['Location', {'classes': ['collapse'], 'fields': ['country']}]
         ]
-        self.exclude = []
+        self.readonly_fields = [
+            'host', 'port', 'scraper_count', 'online', 'google_ban', 'speed',
+            'date_online', 'date_google_ban', 'country'
+        ]
         return super().change_view(request, object_id)
 
     def online_check_action(self, request, queryset):
@@ -197,21 +209,53 @@ class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
     actions = ['search_action']
 
     def add_view(self, request, extra_content=None):
+        self.fieldsets = [
+            [None, {'fields': ['q']}],
+            [
+                'Options', {
+                    'classes': ['collapse'],
+                    'fields': ['cr', 'cd_min', 'cd_max']
+                }
+            ]
+        ]
         self.readonly_fields = []
-        self.exclude = ['total_result_count', 'result_count', 'success']
         self.inlines = []
         return super().add_view(request)
 
     def change_view(self, request, object_id, extra_content=None):
+        self.fieldsets = [
+            [None, {'fields': ['q']}],
+            [
+                'Options', {
+                    'classes': ['collapse'],
+                    'fields': ['cr', 'cd_min', 'cd_max']
+                }
+            ]
+        ]
         self.readonly_fields = []
-        self.exclude = ['total_result_count', 'result_count', 'success']
         self.inlines = []
         obj = GoogleSearch.objects.get(id=object_id)
         if obj.result_count:
-            self.exclude = []
+            self.fieldsets = [
+                [None, {'fields': ['q']}],
+                [
+                    'Options', {
+                        'classes': ['collapse'],
+                        'fields': ['cr', 'cd_min', 'cd_max']
+                    }
+                ],
+                [
+                    'Results', {
+                        'classes': ['collapse'],
+                        'fields': [
+                            'success', 'total_result_count', 'result_count'
+                        ]
+                    }
+                ]
+            ]
             self.readonly_fields = [
-                'q', 'cr', 'cd_min', 'cd_max', 'total_result_count',
-                'result_count', 'success'
+                'q', 'cr', 'cd_min', 'cd_max', 'success', 'total_result_count',
+                'result_count'
             ]
             self.inlines = [GooglePageInline]
         return super().change_view(request, object_id)
@@ -234,6 +278,7 @@ class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
     search_action.short_description = 'Search Google for selected searches'
 
     def _results(self, obj):
+        '''google link admin change list url filtered by search id'''
         url = reverse('admin:scraper_googlelink_changelist') + \
             '?page__search__id__exact={}'.format(obj.id)
         return '<a href="{0}">View all</a>'.format(url)
@@ -246,19 +291,19 @@ class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
 class GooglePageAdmin(NoInlineTitleAdmin, ReadOnlyAdmin):
 
     list_display = ['url', 'result_count', 'date_added']
+    fieldsets = [[None, {'fields': ['_url', '_html', 'result_count']}]]
     readonly_fields = ['_url', '_html', 'result_count']
-    exclude = [
-        'search', 'url', 'html', 'result_count', 'start', 'end', 'next_page'
-    ]
     inlines = [GoogleLinkInline]
 
     def _url(self, obj):
+        '''search result page url'''
         return '<a href="{0}" target="_blank">{0}</a>'.format(obj.url)
 
     _url.short_description = 'url'
     _url.allow_tags = True
 
     def _html(self, obj):
+        '''stored html url'''
         return '<a href="{}" target="_blank">View</a>'.format(
             reverse('html', args=[obj.pk])
         )
@@ -272,10 +317,16 @@ class GoogleLinkAdmin(ReadOnlyAdmin):
 
     search_fields = ['title']
     list_display = ['url', 'title', 'date_added']
+    fieldsets = [[None, {'fields': ['_url', 'title', 'snippet', 'rank']}]]
     readonly_fields = ['_url', 'title', 'snippet', 'rank']
-    exclude = ['page', 'url']
+
+    def lookup_allowed(self, key, value):
+        if key in ['page__search__id__exact']:
+            return True
+        return super().lookup_allowed(key, value)
 
     def _url(self, obj):
+        '''search result url'''
         return '<a href="{0}" target="_blank">{0}</a>'.format(obj.url)
 
     _url.short_description = 'url'
