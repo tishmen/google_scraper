@@ -41,8 +41,10 @@ class GoogleParser(object):
         }
 
     def parse_next_page(self):
-        '''returns next page url or exception'''
-        return 'https://www.google.com' + self.soup.select_one('.pn')['href']
+        '''returns next page url or None'''
+        next_page = self.soup.select('.pn')[-1]
+        if next_page.get_text() == 'Next':
+            return 'https://www.google.com' + next_page['href']
 
     def get_html(self):
         '''returns minifyfied html from soup'''
@@ -59,7 +61,7 @@ class GoogleParser(object):
         '''returns next page url or None'''
         try:
             return self.parse_next_page()
-        except KeyError:
+        except IndexError:
             pass
 
 
