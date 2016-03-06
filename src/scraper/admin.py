@@ -192,10 +192,7 @@ class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
 
     resource_class = GoogleSearchResource
     search_fields = ['q']
-    list_display = [
-        'q', 'cr', 'cd_min', 'cd_max', 'result_count', 'success',
-        'date_updated'
-    ]
+    list_display = ['q', '_results', 'result_count', 'success', 'date_updated']
     list_filter = ['success']
     actions = ['search_action']
 
@@ -235,6 +232,14 @@ class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
         )
 
     search_action.short_description = 'Search Google for selected searches'
+
+    def _results(self, obj):
+        url = reverse('admin:scraper_googlelink_changelist') + \
+            '?page__search__id__exact={}'.format(obj.id)
+        return '<a href="{0}">View all</a>'.format(url)
+
+    _results.short_description = 'results'
+    _results.allow_tags = True
 
 
 @admin.register(GooglePage)
