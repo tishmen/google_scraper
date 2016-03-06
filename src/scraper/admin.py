@@ -180,8 +180,8 @@ class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
 class GooglePageAdmin(ReadOnlyAdmin):
 
     list_display = ['url', 'date_added']
-    readonly_fields = ['url', 'html', 'start', 'end', 'next_page']
-    exclude = ['search']
+    readonly_fields = ['url', 'start', 'end', 'next_page']
+    exclude = ['search', 'html']
     inlines = [GoogleLinkInline]
 
 

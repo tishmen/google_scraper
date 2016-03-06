@@ -66,7 +66,7 @@ class Proxy(models.Model):
     def get_proxy():
         '''return working proxy with lowest connection count or None'''
         proxies = Proxy.objects.exclude(online=False, google_ban=True)
-        return proxies.order_by('-connection_count').first()
+        return proxies.order_by('-scraper_count').first()
 
     def register(self):
         '''increment scraper_count before http request'''
@@ -232,7 +232,7 @@ class GoogleSearch(models.Model):
     def search(self):
         '''search call on GoogleScraper object'''
         scraper = GoogleScraper(
-            self, UserAgent.get_random_user_agent(), Proxy.get_proxy()
+            self, UserAgent.get_user_agent_string(), Proxy.get_proxy()
         )
         scraper.scrape()
 

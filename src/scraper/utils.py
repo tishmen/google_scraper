@@ -91,7 +91,7 @@ class GoogleScraper(object):
         '''returns request call parameters to be unpacked.'''
         request_params = {'url': self.url, 'timeout': settings.REQUEST_TIMEOUT}
         if self.user_agent:
-            request_params['headers'] = {'User-Agent': self.user_agent.string}
+            request_params['headers'] = {'User-Agent': self.user_agent}
         if self.proxy:
             request_params['proxies'] = {
                 'http': 'http://{}:{}'.format(self.proxy.host, self.proxy.port)
@@ -101,18 +101,23 @@ class GoogleScraper(object):
     def get_response(self):
         '''gets http response for url or None.'''
         try:
-            self.proxy.register()
-            response = requests.get(**self.get_request_params())
-            self.proxy.unregister()
+            if self.proxy:
+                self.proxy.register()
+                response = requests.get(**self.get_request_params())
+                self.proxy.unregister()
+            else:
+                response = requests.get(**self.get_request_params())
             print('got response from url {}'.format(self.url))
-            self.proxy.set_online()
+            if self.proxy:
+                self.proxy.set_online()
             return response
         except requests.ConnectionError as e:
             print('connection failed {}'.format(e))
         except requests.Timeout as e:
             print('connection timeout {}'.format(e))
-        self.proxy.unset_online()
-        self.update_proxy()
+        if self.proxy:
+            self.proxy.unset_online()
+            self.update_proxy()
         print('failed to get response from url {}'.format(self.url))
 
     def handle_status_code(self):
@@ -121,15 +126,17 @@ class GoogleScraper(object):
         '''
         if self.response.status_code == 200:
             print('status code 200 for {}'.format(self.url))
-            self.proxy.unset_google_ban()
+            if self.proxy:
+                self.proxy.unset_google_ban()
             return self.response
         print(
             'bad status code {} for {}'.format(
                 self.response.status_code, self.url
             )
         )
-        self.proxy.set_google_ban()
-        self.update_proxy()
+        if self.proxy:
+            self.proxy.set_google_ban()
+            self.update_proxy()
 
     def do_request(self):
         '''performs http request and handles exceptions'''
@@ -165,12 +172,13 @@ class GoogleScraper(object):
     def create_links(self):
         '''creates GoogleLink entries in database'''
         from .models import GoogleLink
-        self.links = []
-        for i, link_params, in enumerate(self.parser.get_links()):
+        links = []
+        for i, link_params, in enumerate(self.links):
             link_params.update({'page': self.page, 'rank': self.start + i})
             link = GoogleLink.objects.create(**link_params)
             print('created google link {}'.format(link))
-            self.links.append(link)
+            links.append(link)
+        self.links = links
         print(
             'created {} google links for google page {}'.format(
                 len(self.links), self.page
@@ -185,6 +193,7 @@ class GoogleScraper(object):
             if not self.response:
                 self.search.unset_success()
                 break
+            self.links = self.parser.get_links()
             self.create_page()
             self.create_links()
             if not self.page.next_page:
