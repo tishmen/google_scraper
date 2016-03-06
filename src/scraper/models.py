@@ -60,7 +60,7 @@ class Proxy(models.Model):
 
     def save(self, *args, **kwargs):
         self.country_check()
-        super(Proxy, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     @staticmethod
     def get_proxy():
@@ -178,7 +178,7 @@ class GoogleSearch(models.Model):
 
     '''database record for google search'''
 
-    q = models.CharField(verbose_name='query', max_length=100)
+    q = models.CharField(verbose_name='search', max_length=100)
     cr = models.CharField(
         verbose_name='country', max_length=9, choices=SEARCH_CR,
         default='countryUS'
@@ -198,7 +198,7 @@ class GoogleSearch(models.Model):
     def save(self, *args, **kwargs):
         if self.cd_min and not self.cd_max:
             self.cd_max = date.today()
-        super(GoogleSearch, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def set_success(self):
         '''set google search success to True'''
@@ -214,13 +214,20 @@ class GoogleSearch(models.Model):
 
     def get_query_params(self):
         '''return query params to be added to google search url'''
-        params = {'q': self.q, 'cr': self.cr, 'hl': 'en', 'nfpr': '1'}
+        params = {
+            'q': self.q,
+            'tbs': 'ctr:{}'.format(self.cr),
+            'hl': 'en',
+            'nfpr': '1'
+        }
         if settings.RESULTS_PER_PAGE != 10:
             params['num'] = str(settings.RESULTS_PER_PAGE)
         if self.cd_min and self.cd_max:
             cd_min = self.cd_min.strftime('%m/%d/%Y')
             cd_max = self.cd_max.strftime('%m/%d/%Y')
-            params['tbs'] = 'cdr:1,cd_min:{},cd_max:{}'.format(cd_min, cd_max)
+            params['tbs'] += ',cdr:1,cd_min:{},cd_max:{}'.format(
+                cd_min, cd_max
+            )
         return params
 
     @property
@@ -258,8 +265,8 @@ class GoogleLink(models.Model):
     '''database record for google link'''
 
     page = models.ForeignKey('GooglePage')
-    url = models.URLField()
     title = models.CharField(max_length=100)
+    url = models.URLField()
     snippet = models.TextField()
     rank = models.IntegerField()
     date_added = models.DateTimeField(auto_now_add=True)

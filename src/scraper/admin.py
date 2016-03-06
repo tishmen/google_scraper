@@ -5,6 +5,7 @@ from import_export import resources
 from import_export.admin import ImportMixin
 
 from django.contrib import admin, messages
+from django.core.urlresolvers import reverse
 
 from .models import UserAgent, Proxy, GoogleSearch, GooglePage, GoogleLink
 from .tasks import online_check_task, google_ban_check_task, search_task
@@ -46,18 +47,63 @@ class ReadOnlyInline(admin.TabularInline):
 class GooglePageInline(ReadOnlyInline):
 
     model = GooglePage
-    exclude = ['html', 'start', 'end', 'next_page']
-    readonly_fields = ['url', 'date_added']
+    exclude = ['url', 'html', 'start', 'end', 'next_page']
+    readonly_fields = ['_url', 'date_added']
     extra = 0
     show_change_link = True
+
+    def _url(self, obj):
+        url = reverse(
+            'admin:{}_{}_change'.format(
+                obj._meta.app_label, obj._meta.model_name
+            ),
+            args=[obj.id]
+        )
+        return '<a href="{}">{}</a>'.format(url, obj.url)
+
+    _url.allow_tags = True
 
 
 class GoogleLinkInline(ReadOnlyInline):
 
     model = GoogleLink
-    exclude = ['snippet', 'rank']
-    readonly_fields = ['url', 'title', 'date_added']
+    exclude = ['title', 'url', 'snippet']
+    readonly_fields = ['_title', '_url', 'rank', 'date_added']
     extra = 0
+
+    def _title(self, obj):
+        url = reverse(
+            'admin:{}_{}_change'.format(
+                obj._meta.app_label, obj._meta.model_name
+            ),
+            args=[obj.id]
+        )
+        return '<a href="{}">{}</a>'.format(url, obj.title)
+
+    _title.allow_tags = True
+
+    def _url(self, obj):
+        return '<a href="{0}" target="_blank">{0}</a>'.format(obj.url)
+
+    _url.allow_tags = True
+
+
+class NoInlineTitleAdmin(admin.ModelAdmin):
+
+    def render_change_form(self, request, context, *args, **kwargs):
+        def get_queryset(original_func):
+            def wrapped_func():
+                if inspect.stack()[1][3] == '__iter__':
+                    return itertools.repeat(None)
+                return original_func()
+            return wrapped_func
+        for formset in context['inline_admin_formsets']:
+            formset.formset.get_queryset = get_queryset(
+                formset.formset.get_queryset
+            )
+        return super().render_change_form(
+            request, context, *args, **kwargs
+        )
 
 
 class ReadOnlyAdmin(admin.ModelAdmin):
@@ -95,7 +141,7 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
             'date_added', 'date_updated', 'date_online', 'date_google_ban'
         ]
         self.readonly_fields = []
-        return super(ProxyAdmin, self).add_view(request)
+        return super().add_view(request)
 
     def change_view(self, request, object_id, extra_content=None):
         self.readonly_fields = [
@@ -104,7 +150,7 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
             'date_google_ban'
         ]
         self.exclude = []
-        return super(ProxyAdmin, self).change_view(request, object_id)
+        return super().change_view(request, object_id)
 
     def online_check_action(self, request, queryset):
         '''online check admin action'''
@@ -142,41 +188,30 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
 
 
 @admin.register(GoogleSearch)
-class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
+class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
 
     resource_class = GoogleSearchResource
     search_fields = ['q']
     list_display = ['q', 'cr', 'cd_min', 'cd_max', 'success', 'date_updated']
     list_filter = ['success']
     actions = ['search_action']
-    exclude = ['success']
-    inlines = [GooglePageInline]
 
     def add_view(self, request, extra_content=None):
         self.readonly_fields = []
-        return super(GoogleSearchAdmin, self).add_view(request)
+        self.exclude = ['success']
+        self.inlines = []
+        return super().add_view(request)
 
     def change_view(self, request, object_id, extra_content=None):
+        self.readonly_fields = []
+        self.exclude = ['success']
+        self.inlines = []
         obj = GoogleSearch.objects.get(id=object_id)
-        if obj.success:
-            self.readonly_fields = ['q', 'cr', 'cd_min', 'cd_max', 'success']
+        if obj.googlepage_set.count():
             self.exclude = []
-        return super(GoogleSearchAdmin, self).change_view(request, object_id)
-
-    def render_change_form(self, request, context, *args, **kwargs):
-        def get_queryset(original_func):
-            def wrapped_func():
-                if inspect.stack()[1][3] == '__iter__':
-                    return itertools.repeat(None)
-                return original_func()
-            return wrapped_func
-        for formset in context['inline_admin_formsets']:
-            formset.formset.get_queryset = get_queryset(
-                formset.formset.get_queryset
-            )
-        return super(GoogleSearchAdmin, self).render_change_form(
-            request, context, *args, **kwargs
-        )
+            self.readonly_fields = ['q', 'cr', 'cd_min', 'cd_max', 'success']
+            self.inlines = [GooglePageInline]
+        return super().change_view(request, object_id)
 
     def search_action(self, request, queryset):
         '''google search admin action'''
@@ -196,12 +231,26 @@ class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
 
 
 @admin.register(GooglePage)
-class GooglePageAdmin(ReadOnlyAdmin):
+class GooglePageAdmin(NoInlineTitleAdmin, ReadOnlyAdmin):
 
     list_display = ['url', 'date_added']
-    readonly_fields = ['url', 'start', 'end', 'next_page']
-    exclude = ['search', 'html']
+    readonly_fields = ['_url', '_html']
+    exclude = ['search', 'url', 'html', 'start', 'end', 'next_page']
     inlines = [GoogleLinkInline]
+
+    def _url(self, obj):
+        return '<a href="{0}" target="_blank">{0}</a>'.format(obj.url)
+
+    _url.short_description = 'url'
+    _url.allow_tags = True
+
+    def _html(self, obj):
+        return '<a href="{}" target="_blank">View</a>'.format(
+            reverse('html', args=[obj.pk])
+        )
+
+    _html.short_description = 'html'
+    _html.allow_tags = True
 
 
 @admin.register(GoogleLink)
@@ -209,5 +258,11 @@ class GoogleLinkAdmin(ReadOnlyAdmin):
 
     search_fields = ['title']
     list_display = ['url', 'title', 'date_added']
-    readonly_fields = ['url', 'title', 'snippet', 'rank']
-    exclude = ['page']
+    readonly_fields = ['_url', 'title', 'snippet', 'rank']
+    exclude = ['page', 'url']
+
+    def _url(self, obj):
+        return '<a href="{0}" target="_blank">{0}</a>'.format(obj.url)
+
+    _url.short_description = 'url'
+    _url.allow_tags = True

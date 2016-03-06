@@ -71,7 +71,7 @@ class GoogleScraper(object):
 
     def __init__(self, search, user_agent=None, proxy=None):
         self.url = search.url
-        self.start = 0
+        self.start = 1
         self.search = search
         self.user_agent = user_agent
         self.proxy = proxy
@@ -176,7 +176,7 @@ class GoogleScraper(object):
         from .models import GoogleLink
         links = []
         for i, link_params, in enumerate(self.links):
-            link_params.update({'page': self.page, 'rank': self.start + i})
+            link_params.update({'page': self.page, 'rank': self.start + i + 1})
             link = GoogleLink.objects.create(**link_params)
             print('created google link {}'.format(link))
             links.append(link)
