@@ -40,6 +40,11 @@ class GoogleParser(object):
             'snippet': self.parse_snippet(node),
         }
 
+    def parse_total_result_count(self):
+        '''returns total result count'''
+        count = self.soup.select_one('#resultStats').get_text().split(' ')[-4]
+        return int(count.replace(',', ''))
+
     def parse_next_page(self):
         '''returns next page url or None'''
         next_page = self.soup.select('.pn')[-1]
@@ -57,6 +62,13 @@ class GoogleParser(object):
             links.append(self.parse_link(node))
         return links
 
+    def get_total_result_count(self):
+        '''returns total result count or None'''
+        try:
+            return self.parse_total_result_count()
+        except:
+            pass
+
     def get_next_page(self):
         '''returns next page url or None'''
         try:
@@ -71,6 +83,8 @@ class GoogleScraper(object):
 
     def __init__(self, search, user_agent=None, proxy=None):
         self.url = search.url
+        self.search_result_count = 0
+        self.page_result_count = 0
         self.start = 1
         self.search = search
         self.user_agent = user_agent
@@ -100,19 +114,23 @@ class GoogleScraper(object):
             }
         return request_params
 
+    def _get_response(self):
+        '''gets http response for url'''
+        if self.proxy:
+            self.proxy.register()
+            response = requests.get(**self.get_request_params())
+            self.proxy.unregister()
+        else:
+            response = requests.get(**self.get_request_params())
+        print('got response from url {}'.format(self.url))
+        if self.proxy:
+            self.proxy.set_online()
+        return response
+
     def get_response(self):
         '''gets http response for url or None.'''
         try:
-            if self.proxy:
-                self.proxy.register()
-                response = requests.get(**self.get_request_params())
-                self.proxy.unregister()
-            else:
-                response = requests.get(**self.get_request_params())
-            print('got response from url {}'.format(self.url))
-            if self.proxy:
-                self.proxy.set_online()
-            return response
+            return self._get_response()
         except requests.ConnectionError as e:
             print('connection failed {}'.format(e))
         except requests.Timeout as e:
@@ -154,9 +172,14 @@ class GoogleScraper(object):
             self.parser = GoogleParser(self.response)
             break
 
+    def get_links(self):
+        '''gets link array from parser and adjusts result count'''
+        self.links = self.parser.get_links()
+        self.page_result_count = len(self.links)
+
     def get_end(self):
         '''returns end result index'''
-        return self.start + len(self.links)
+        return self.start + self.page_result_count
 
     def create_page(self):
         '''creates GooglePage entry in database'''
@@ -165,6 +188,8 @@ class GoogleScraper(object):
             search=self.search,
             url=self.url,
             html=self.parser.get_html(),
+            total_result_count=self.parser.get_total_result_count(),
+            result_count=self.page_result_count,
             start=self.start,
             end=self.get_end(),
             next_page=self.parser.get_next_page()
@@ -187,21 +212,38 @@ class GoogleScraper(object):
             )
         )
 
+    def is_request_failed(self):
+        '''checks for valid response'''
+        if self.response:
+            return True
+        self.search.unset_success()
+
+    def is_last_page(self):
+        '''checks whether we are on the last page of search results'''
+        if self.page.next_page:
+            return
+        print('reached last page for query {}'.format(self.search))
+        self.search.set_success()
+        return True
+
+    def update_loop(self):
+        '''updates main scrape loop'''
+        self.url = self.page.next_page
+        self.search_result_count += self.page_result_count
+        self.start = self.get_end()
+
     def scrape(self):
         '''main scrape call'''
         print('scraping for query {}'.format(self.search))
         for _ in range(settings.MAX_PAGE):
             self.do_request()
-            if not self.response:
-                self.search.unset_success()
+            if self.is_request_failed():
                 break
-            self.links = self.parser.get_links()
+            self.get_links()
             self.create_page()
             self.create_links()
-            if not self.page.next_page:
-                print('reached last page for query {}'.format(self.search))
-                self.search.set_success()
+            if self.is_last_page():
                 break
-            self.url = self.page.next_page
-            self.start = self.get_end()
+            self.update_loop()
             self.sleep(random.uniform(settings.MIN_SLEEP, settings.MAX_SLEEP))
+        self.search.set_result_count(self.search_result_count)

@@ -192,29 +192,36 @@ class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
 
     resource_class = GoogleSearchResource
     search_fields = ['q']
-    list_display = ['q', 'cr', 'cd_min', 'cd_max', 'success', 'date_updated']
+    list_display = [
+        'q', 'cr', 'cd_min', 'cd_max', 'result_count', 'success',
+        'date_updated'
+    ]
     list_filter = ['success']
     actions = ['search_action']
 
     def add_view(self, request, extra_content=None):
         self.readonly_fields = []
-        self.exclude = ['success']
+        self.exclude = ['total_result_count', 'result_count', 'success']
         self.inlines = []
         return super().add_view(request)
 
     def change_view(self, request, object_id, extra_content=None):
         self.readonly_fields = []
-        self.exclude = ['success']
+        self.exclude = ['total_result_count', 'result_count', 'success']
         self.inlines = []
         obj = GoogleSearch.objects.get(id=object_id)
-        if obj.googlepage_set.count():
+        if obj.result_count:
             self.exclude = []
-            self.readonly_fields = ['q', 'cr', 'cd_min', 'cd_max', 'success']
+            self.readonly_fields = [
+                'q', 'cr', 'cd_min', 'cd_max', 'total_result_count',
+                'result_count', 'success'
+            ]
             self.inlines = [GooglePageInline]
         return super().change_view(request, object_id)
 
     def search_action(self, request, queryset):
         '''google search admin action'''
+        queryset = queryset.exclude(success=True)
         count = queryset.count()
         search_task.delay(queryset)
         if count == 1:
@@ -233,9 +240,11 @@ class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
 @admin.register(GooglePage)
 class GooglePageAdmin(NoInlineTitleAdmin, ReadOnlyAdmin):
 
-    list_display = ['url', 'date_added']
-    readonly_fields = ['_url', '_html']
-    exclude = ['search', 'url', 'html', 'start', 'end', 'next_page']
+    list_display = ['url', 'result_count', 'date_added']
+    readonly_fields = ['_url', '_html', 'result_count']
+    exclude = [
+        'search', 'url', 'html', 'result_count', 'start', 'end', 'next_page'
+    ]
     inlines = [GoogleLinkInline]
 
     def _url(self, obj):

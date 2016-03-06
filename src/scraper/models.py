@@ -185,6 +185,7 @@ class GoogleSearch(models.Model):
     )
     cd_min = models.DateField(verbose_name='date start', null=True, blank=True)
     cd_max = models.DateField(verbose_name='date end', null=True, blank=True)
+    result_count = models.PositiveIntegerField(default=0)
     success = models.NullBooleanField()
     date_added = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
@@ -204,13 +205,19 @@ class GoogleSearch(models.Model):
         '''set google search success to True'''
         self.success = True
         self.save()
-        print('google search for query {} succeded')
+        print('google search for query {} succeded'.format(self.q))
 
     def unset_success(self):
         '''set google search success to False'''
         self.success = False
         self.save()
-        print('google search for query {} failed')
+        print('google search for query {} failed'.format(self.q))
+
+    def set_result_count(self, count):
+        '''set google search result count to value'''
+        self.result_count = count
+        self.save()
+        print('result count for google search {} is {}'.format(self.q, count))
 
     def get_query_params(self):
         '''return query params to be added to google search url'''
@@ -251,8 +258,10 @@ class GooglePage(models.Model):
     search = models.ForeignKey('GoogleSearch')
     url = models.URLField()
     html = models.TextField()
-    start = models.PositiveIntegerField(default=0)
-    end = models.PositiveIntegerField(default=0)
+    total_result_count = models.BigIntegerField()
+    result_count = models.PositiveIntegerField()
+    start = models.PositiveIntegerField()
+    end = models.PositiveIntegerField()
     next_page = models.URLField(null=True, blank=True)
     date_added = models.DateTimeField(auto_now_add=True)
 
