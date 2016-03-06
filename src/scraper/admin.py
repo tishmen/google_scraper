@@ -1,3 +1,6 @@
+import inspect
+import itertools
+
 from import_export import resources
 from import_export.admin import ImportMixin
 
@@ -46,6 +49,7 @@ class GooglePageInline(ReadOnlyInline):
     exclude = ['html', 'start', 'end', 'next_page']
     readonly_fields = ['url', 'date_added']
     extra = 0
+    show_change_link = True
 
 
 class GoogleLinkInline(ReadOnlyInline):
@@ -158,6 +162,21 @@ class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
             self.readonly_fields = ['q', 'cr', 'cd_min', 'cd_max', 'success']
             self.exclude = []
         return super(GoogleSearchAdmin, self).change_view(request, object_id)
+
+    def render_change_form(self, request, context, *args, **kwargs):
+        def get_queryset(original_func):
+            def wrapped_func():
+                if inspect.stack()[1][3] == '__iter__':
+                    return itertools.repeat(None)
+                return original_func()
+            return wrapped_func
+        for formset in context['inline_admin_formsets']:
+            formset.formset.get_queryset = get_queryset(
+                formset.formset.get_queryset
+            )
+        return super(GoogleSearchAdmin, self).render_change_form(
+            request, context, *args, **kwargs
+        )
 
     def search_action(self, request, queryset):
         '''google search admin action'''

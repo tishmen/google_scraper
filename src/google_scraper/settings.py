@@ -14,8 +14,6 @@ import os
 
 import djcelery
 
-from django.contrib import messages
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -35,7 +33,6 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django_admin_bootstrapped',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -147,18 +144,6 @@ CELERY_SEND_EVENTS = True
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 
 djcelery.setup_loader()
-
-
-# bootstrap
-
-DAB_FIELD_RENDERER = 'django_admin_bootstrapped.renderers.BootstrapFieldRende'\
-    'rer'
-
-MESSAGE_TAGS = {
-            messages.SUCCESS: 'alert-success success',
-            messages.WARNING: 'alert-warning warning',
-            messages.ERROR: 'alert-danger error'
-}
 
 
 # app config
