@@ -160,11 +160,16 @@ MESSAGE_TAGS = {
             messages.ERROR: 'alert-danger error'
 }
 
+
 # app config
 
 PROXY_TIMEOUT = 10
 
 REQUEST_TIMEOUT = 60
+
+MIN_SLEEP = 10
+
+MAX_SLEEP = 60
 
 RETRY_TIMEOUT = 60
 

@@ -1,3 +1,4 @@
+import random
 import time
 
 import htmlmin
@@ -71,13 +72,12 @@ class GoogleScraper(object):
         self.start = 0
         self.search = search
         self.user_agent = user_agent
+        self.proxy = proxy
 
-    def sleep(self):
-        '''sleeps TIMEOUT_BETWEEN_RETRIES seconds'''
-        print(
-            'sleeping for {} seconds'.format(settings.TIMEOUT_BETWEEN_RETRIES)
-        )
-        time.sleep(settings.TIMEOUT_BETWEEN_RETRIES)
+    def sleep(self, seconds):
+        '''sleeps n seconds'''
+        print('sleeping for {} seconds'.format(seconds))
+        time.sleep(seconds)
 
     def update_proxy(self):
         '''updates instance proxy'''
@@ -85,7 +85,7 @@ class GoogleScraper(object):
         old_proxy = self.proxy
         self.proxy = Proxy.get_proxy()
         print('switching proxy from {} to {}'.format(old_proxy, self.proxy))
-        self.sleep()
+        self.sleep(settings.RETRY_TIMEOUT)
 
     def get_request_params(self):
         '''returns request call parameters to be unpacked.'''
@@ -166,7 +166,7 @@ class GoogleScraper(object):
         '''creates GoogleLink entries in database'''
         from .models import GoogleLink
         self.links = []
-        for link_params, i in enumerate(self.parser.get_links()):
+        for i, link_params, in enumerate(self.parser.get_links()):
             link_params.update({'page': self.page, 'rank': self.start + i})
             link = GoogleLink.objects.create(**link_params)
             print('created google link {}'.format(link))
@@ -193,3 +193,4 @@ class GoogleScraper(object):
                 break
             self.url = self.page.next_page
             self.start = self.get_end()
+            self.sleep(random.uniform(settings.MIN_SLEEP, settings.MAX_SLEEP))
