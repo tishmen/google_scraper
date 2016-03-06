@@ -13,12 +13,16 @@ from .tasks import online_check_task, google_ban_check_task, search_task
 
 class UserAgentResource(resources.ModelResource):
 
+    'django import export resource class for UserAgent'
+
     class Meta:
         model = UserAgent
         exclude = ['date_added']
 
 
 class ProxyResource(resources.ModelResource):
+
+    'django import export resource class for Proxy'
 
     class Meta:
         model = Proxy
@@ -30,12 +34,16 @@ class ProxyResource(resources.ModelResource):
 
 class GoogleSearchResource(resources.ModelResource):
 
+    'django import export resource class for GoogleSearch'
+
     class Meta:
         model = GoogleSearch
         exclude = ['success', 'date_updated', 'date_added']
 
 
 class ReadOnlyInline(admin.TabularInline):
+
+    '''inline with add and delete permissions disabled'''
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -45,6 +53,8 @@ class ReadOnlyInline(admin.TabularInline):
 
 
 class GooglePageInline(ReadOnlyInline):
+
+    '''Google page inlined to Google search'''
 
     model = GooglePage
     exclude = ['url', 'html', 'start', 'end', 'next_page']
@@ -66,6 +76,8 @@ class GooglePageInline(ReadOnlyInline):
 
 
 class GoogleLinkInline(ReadOnlyInline):
+
+    '''Google link inlined to Google page'''
 
     model = GoogleLink
     exclude = ['title', 'url', 'snippet']
@@ -93,6 +105,8 @@ class GoogleLinkInline(ReadOnlyInline):
 
 class NoInlineTitleAdmin(admin.ModelAdmin):
 
+    '''title removed from tabular inline entry'''
+
     # http://stackoverflow.com/questions/5086537/how-to-omit-object-name-from-djangos-tabularinline-admin-view
     def render_change_form(self, request, context, *args, **kwargs):
         def get_queryset(original_func):
@@ -112,6 +126,8 @@ class NoInlineTitleAdmin(admin.ModelAdmin):
 
 class ReadOnlyAdmin(admin.ModelAdmin):
 
+    '''model admin with add and delete permissions disabled'''
+
     def has_add_permission(self, request, obj=None):
         return False
 
@@ -122,6 +138,8 @@ class ReadOnlyAdmin(admin.ModelAdmin):
 @admin.register(UserAgent)
 class UserAgentAdmin(ImportMixin, admin.ModelAdmin):
 
+    '''model admin for user agent'''
+
     resource_class = UserAgentResource
     search_fields = ['string']
     list_display = ['string', 'date_added']
@@ -129,6 +147,8 @@ class UserAgentAdmin(ImportMixin, admin.ModelAdmin):
 
 @admin.register(Proxy)
 class ProxyAdmin(ImportMixin, admin.ModelAdmin):
+
+    '''model admin for proxy'''
 
     resource_class = ProxyResource
     search_fields = ['__str__']
@@ -201,6 +221,8 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
 
 @admin.register(GoogleSearch)
 class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
+
+    '''model admin for google search'''
 
     resource_class = GoogleSearchResource
     search_fields = ['q']
@@ -290,6 +312,8 @@ class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
 @admin.register(GooglePage)
 class GooglePageAdmin(NoInlineTitleAdmin, ReadOnlyAdmin):
 
+    '''model admin for google page'''
+
     list_display = ['url', 'result_count', 'date_added']
     fieldsets = [[None, {'fields': ['_url', '_html', 'result_count']}]]
     readonly_fields = ['_url', '_html', 'result_count']
@@ -314,6 +338,8 @@ class GooglePageAdmin(NoInlineTitleAdmin, ReadOnlyAdmin):
 
 @admin.register(GoogleLink)
 class GoogleLinkAdmin(ReadOnlyAdmin):
+
+    '''model admin for google link'''
 
     search_fields = ['title']
     list_display = ['url', 'title', 'date_added']
