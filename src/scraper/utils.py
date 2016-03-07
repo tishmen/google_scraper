@@ -63,11 +63,11 @@ class GoogleParser(object):
         return links
 
     def get_total_result_count(self):
-        '''return total result count or None'''
+        '''return total result count or 0'''
         try:
             return self.parse_total_result_count()
         except:
-            pass
+            return 0
 
     def get_next_page(self):
         '''return next page url or None'''
