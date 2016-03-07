@@ -202,7 +202,7 @@ class GoogleSearch(models.Model):
         super().save(*args, **kwargs)
 
     def set_success(self, value):
-        '''set google search success to True'''
+        '''set google search success to value'''
         self.success = value
         self.save()
         if self.success:

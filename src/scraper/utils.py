@@ -238,6 +238,14 @@ class GoogleScraper(object):
         self.search_result_count += self.page_result_count
         self.start = self.get_end()
         self.success = True
+        self.sleep(
+            random.uniform(settings.MIN_RETRY_SLEEP, settings.MAX_RETRY_SLEEP)
+        )
+
+    def update_search(self):
+        '''updates search object with newly computed values'''
+        self.search.set_result_count(self.search_result_count)
+        self.search.set_success(self.success)
 
     def scrape(self):
         '''main scrape call'''
@@ -252,10 +260,4 @@ class GoogleScraper(object):
             if self.is_last_page():
                 break
             self.update_loop()
-            self.sleep(
-                random.uniform(
-                    settings.MIN_RETRY_SLEEP, settings.MAX_RETRY_SLEEP
-                )
-            )
-        self.search.set_result_count(self.search_result_count)
-        self.search.set_success(self.success)
+        self.update_search()
