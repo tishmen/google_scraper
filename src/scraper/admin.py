@@ -300,6 +300,13 @@ class GooglePageAdmin(ReadOnlyAdmin):
     readonly_fields = ['_url', '_html', 'total_result_count', 'result_count']
     inlines = [GoogleLinkInline]
 
+    def change_view(self, request, object_id, extra_content=None):
+        self.inlines = []
+        obj = GooglePage.objects.get(id=object_id)
+        if obj.googlelink_set.count():
+            self.inlines = [GoogleLinkInline]
+        return super().change_view(request, object_id)
+
     def _url(self, obj):
         '''search result page url field'''
         return '<a href="{0}" target="_blank">{0}</a>'.format(obj.url)
