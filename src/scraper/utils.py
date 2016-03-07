@@ -104,25 +104,29 @@ class GoogleScraper(object):
         '''return request call parameters to be unpacked.'''
         params = {'url': self.url, 'timeout': settings.REQUEST_TIMEOUT}
         if self.user_agent:
+            print('using user agent {}'.format(self.user_agent))
             params['headers'] = {'User-Agent': self.user_agent}
+        else:
+            print('not using user agent')
         if self.proxy:
+            print('using proxy {}'.format(self.proxy))
             params['proxies'] = {
                 'http': 'http://{}:{}'.format(self.proxy.host, self.proxy.port)
             }
+        else:
+            print('not using proxy')
         return params
 
     def get_response(self):
         '''fetch http response for url'''
         if self.proxy:
-            print('using proxy {}'.format(self.proxy))
             self.proxy.register()
             response = requests.get(**self.get_request_params())
             self.proxy.unregister()
+            self.proxy.set_online()
         else:
             response = requests.get(**self.get_request_params())
         print('got response from url {}'.format(self.url))
-        if self.proxy:
-            self.proxy.set_online()
         return response
 
     def handle_response(self):

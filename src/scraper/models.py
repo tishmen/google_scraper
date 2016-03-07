@@ -88,21 +88,19 @@ class Proxy(models.Model):
             )
         )
 
-    def set_online(self, do_save=True):
+    def set_online(self):
         '''set status to online'''
         if not self.online:
             self.online = True
         self.date_online = timezone.now()
-        if do_save:
-            self.save()
+        self.save()
         print('proxy {} is online'.format(self))
 
-    def unset_online(self, do_save=True):
+    def unset_online(self):
         '''set status to offline'''
         if self.online is not False:
             self.online = False
-            if do_save:
-                self.save()
+            self.save()
         print('proxy {} is not online'.format(self))
 
     def set_google_ban(self):
@@ -139,10 +137,10 @@ class Proxy(models.Model):
         sock.settimeout(settings.PROXY_TIMEOUT)
         try:
             sock.connect((self.host, self.port))
-            self.set_online(do_save=False)
+            self.set_online()
             self.set_speed(time.time() - start)
         except (socket.error, socket.timeout):
-            self.unset_online(do_save=False)
+            self.unset_online()
             self.unset_speed()
 
     def google_ban_check(self):
