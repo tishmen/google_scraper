@@ -40,16 +40,10 @@ class GoogleParser(object):
             'snippet': self.parse_snippet(node),
         }
 
-    def parse_total_result_count(self):
-        '''return total result count'''
-        count = self.soup.select_one('#resultStats').get_text().split(' ')[-4]
-        return int(count.replace(',', ''))
-
     def parse_next_page(self):
         '''return next page url or None'''
-        next_page = self.soup.select('.pn')[-1]
-        if next_page.get_text() == 'Next':
-            return 'https://www.google.com' + next_page['href']
+        return 'https://www.google.com' + \
+            self.soup.find('span', string='Next').find_previous('a')['href']
 
     def get_html(self):
         '''return minifyfied html from soup'''
@@ -61,13 +55,6 @@ class GoogleParser(object):
         for node in self.parse_links():
             links.append(self.parse_link(node))
         return links
-
-    def get_total_result_count(self):
-        '''return total result count or 0'''
-        try:
-            return self.parse_total_result_count()
-        except:
-            return 0
 
     def get_next_page(self):
         '''return next page url or None'''
@@ -191,7 +178,6 @@ class GoogleScraper(object):
             search=self.search,
             url=self.url,
             html=self.parser.get_html(),
-            total_result_count=self.parser.get_total_result_count(),
             result_count=self.page_result_count,
             start=self.start,
             end=self.get_end(),

@@ -256,7 +256,6 @@ class GooglePage(models.Model):
     search = models.ForeignKey('GoogleSearch')
     url = models.URLField()
     html = models.TextField()
-    total_result_count = models.BigIntegerField()
     result_count = models.PositiveIntegerField()
     start = models.PositiveIntegerField()
     end = models.PositiveIntegerField()

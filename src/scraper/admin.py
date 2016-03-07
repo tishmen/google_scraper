@@ -54,10 +54,7 @@ class GooglePageInline(ReadOnlyInline):
     '''google page inlined to google search'''
 
     model = GooglePage
-    exclude = [
-        'url', 'html', 'total_result_count', 'result_count', 'start', 'end',
-        'next_page'
-    ]
+    exclude = ['url', 'html', 'result_count', 'start', 'end', 'next_page']
     readonly_fields = ['_url', 'date_added']
     extra = 0
     show_change_link = True
@@ -294,10 +291,10 @@ class GooglePageAdmin(ReadOnlyAdmin):
     fieldsets = [
         [
             None,
-            {'fields': ['_url', '_html', 'total_result_count', 'result_count']}
+            {'fields': ['_url', '_html', 'result_count']}
         ]
     ]
-    readonly_fields = ['_url', '_html', 'total_result_count', 'result_count']
+    readonly_fields = ['_url', '_html', 'result_count']
     inlines = [GoogleLinkInline]
 
     def change_view(self, request, object_id, extra_content=None):
