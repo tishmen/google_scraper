@@ -13,7 +13,7 @@ from .tasks import online_check_task, google_ban_check_task, search_task
 
 class UserAgentResource(resources.ModelResource):
 
-    'django import export resource class for UserAgent'
+    'django import export resource class for user agent'
 
     class Meta:
         model = UserAgent
@@ -22,7 +22,7 @@ class UserAgentResource(resources.ModelResource):
 
 class ProxyResource(resources.ModelResource):
 
-    'django import export resource class for Proxy'
+    'django import export resource class for proxy'
 
     class Meta:
         model = Proxy
@@ -34,7 +34,7 @@ class ProxyResource(resources.ModelResource):
 
 class GoogleSearchResource(resources.ModelResource):
 
-    'django import export resource class for GoogleSearch'
+    'django import export resource class for google search'
 
     class Meta:
         model = GoogleSearch
@@ -54,7 +54,7 @@ class ReadOnlyInline(admin.TabularInline):
 
 class GooglePageInline(ReadOnlyInline):
 
-    '''Google page inlined to Google search'''
+    '''google page inlined to google search'''
 
     model = GooglePage
     exclude = [
@@ -66,7 +66,7 @@ class GooglePageInline(ReadOnlyInline):
     show_change_link = True
 
     def _url(self, obj):
-        '''google page admin change list url'''
+        '''google page change list url field'''
         url = reverse(
             'admin:{}_{}_change'.format(
                 obj._meta.app_label, obj._meta.model_name
@@ -88,7 +88,7 @@ class GoogleLinkInline(ReadOnlyInline):
     extra = 0
 
     def _title(self, obj):
-        '''google link admin change list url'''
+        '''google link change list url field'''
         url = reverse(
             'admin:{}_{}_change'.format(
                 obj._meta.app_label, obj._meta.model_name
@@ -100,7 +100,7 @@ class GoogleLinkInline(ReadOnlyInline):
     _title.allow_tags = True
 
     def _url(self, obj):
-        '''search result url'''
+        '''search result url field'''
         return '<a href="{0}" target="_blank">{0}</a>'.format(obj.url)
 
     _url.allow_tags = True
@@ -300,7 +300,7 @@ class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
     search_action.short_description = 'Search Google for selected searches'
 
     def _results(self, obj):
-        '''google link admin change list url filtered by search id'''
+        '''google link change list url filtered by search id'''
         url = reverse('admin:scraper_googlelink_changelist') + \
             '?page__search__id__exact={}'.format(obj.id)
         return '<a href="{0}">View all</a>'.format(url)
@@ -325,14 +325,14 @@ class GooglePageAdmin(NoInlineTitleAdmin, ReadOnlyAdmin):
     inlines = [GoogleLinkInline]
 
     def _url(self, obj):
-        '''search result page url'''
+        '''search result page url field'''
         return '<a href="{0}" target="_blank">{0}</a>'.format(obj.url)
 
     _url.short_description = 'url'
     _url.allow_tags = True
 
     def _html(self, obj):
-        '''stored html url'''
+        '''stored html url field'''
         return '<a href="{}" target="_blank">View</a>'.format(
             reverse('html', args=[obj.pk])
         )
@@ -357,7 +357,7 @@ class GoogleLinkAdmin(ReadOnlyAdmin):
         return super().lookup_allowed(key, value)
 
     def _url(self, obj):
-        '''search result url'''
+        '''search result url field'''
         return '<a href="{0}" target="_blank">{0}</a>'.format(obj.url)
 
     _url.short_description = 'url'

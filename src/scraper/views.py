@@ -5,6 +5,6 @@ from .models import GooglePage
 
 
 def html_view(request, pk):
-    '''display stored html from search as a page'''
+    '''display stored html as page'''
     html_response = get_object_or_404(GooglePage, pk=pk)
     return HttpResponse(html_response.html)

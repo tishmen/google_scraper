@@ -11,29 +11,29 @@ from django.conf import settings
 
 class GoogleParser(object):
 
-    '''parses the response from google'''
+    '''parse response from google'''
 
     def __init__(self, response):
         self.soup = BeautifulSoup(response.content, 'html.parser')
 
     def parse_links(self):
-        '''returns result nodes that contain snippet node'''
+        '''return result nodes that contain snippet node'''
         return [node.parent for node in self.soup.select('.srg .rc')]
 
     def parse_url(self, node):
-        '''returns title url from result node'''
+        '''return title url from result node'''
         return node.a['href']
 
     def parse_title(self, node):
-        '''returns title text from result node'''
+        '''return title text from result node'''
         return node.a.get_text()
 
     def parse_snippet(self, node):
-        '''returns snippet text from result node'''
+        '''return snippet text from result node'''
         return node.select_one('.st').get_text()
 
     def parse_link(self, node):
-        '''returns parsed link dictionary'''
+        '''return parsed link dictionary'''
         return {
             'url': self.parse_url(node),
             'title': self.parse_title(node),
@@ -41,36 +41,36 @@ class GoogleParser(object):
         }
 
     def parse_total_result_count(self):
-        '''returns total result count'''
+        '''return total result count'''
         count = self.soup.select_one('#resultStats').get_text().split(' ')[-4]
         return int(count.replace(',', ''))
 
     def parse_next_page(self):
-        '''returns next page url or None'''
+        '''return next page url or None'''
         next_page = self.soup.select('.pn')[-1]
         if next_page.get_text() == 'Next':
             return 'https://www.google.com' + next_page['href']
 
     def get_html(self):
-        '''returns minifyfied html from soup'''
+        '''return minifyfied html from soup'''
         return htmlmin.minify(str(self.soup))
 
     def get_links(self):
-        '''returns parsed link dictionaries'''
+        '''return parsed link dictionaries'''
         links = []
         for node in self.parse_links():
             links.append(self.parse_link(node))
         return links
 
     def get_total_result_count(self):
-        '''returns total result count or None'''
+        '''return total result count or None'''
         try:
             return self.parse_total_result_count()
         except:
             pass
 
     def get_next_page(self):
-        '''returns next page url or None'''
+        '''return next page url or None'''
         try:
             return self.parse_next_page()
         except IndexError:
@@ -79,7 +79,7 @@ class GoogleParser(object):
 
 class GoogleScraper(object):
 
-    '''follows next page and extracts links'''
+    '''follow next page and extract links'''
 
     def __init__(self, search, user_agent=None, proxy=None):
         self.success = None
@@ -92,12 +92,12 @@ class GoogleScraper(object):
         self.proxy = proxy
 
     def sleep(self, seconds):
-        '''sleeps n seconds'''
+        '''sleep n seconds'''
         print('sleeping for {} seconds'.format(seconds))
         time.sleep(seconds)
 
     def update_proxy(self):
-        '''updates instance proxy'''
+        '''update proxy for instance'''
         from .models import Proxy
         old_proxy = self.proxy
         self.proxy = Proxy.get_proxy()
@@ -109,18 +109,18 @@ class GoogleScraper(object):
         )
 
     def get_request_params(self):
-        '''returns request call parameters to be unpacked.'''
-        request_params = {'url': self.url, 'timeout': settings.REQUEST_TIMEOUT}
+        '''return request call parameters to be unpacked.'''
+        params = {'url': self.url, 'timeout': settings.REQUEST_TIMEOUT}
         if self.user_agent:
-            request_params['headers'] = {'User-Agent': self.user_agent}
+            params['headers'] = {'User-Agent': self.user_agent}
         if self.proxy:
-            request_params['proxies'] = {
+            params['proxies'] = {
                 'http': 'http://{}:{}'.format(self.proxy.host, self.proxy.port)
             }
-        return request_params
+        return params
 
-    def _get_response(self):
-        '''gets http response for url'''
+    def get_response(self):
+        '''fetch http response for url'''
         if self.proxy:
             self.proxy.register()
             response = requests.get(**self.get_request_params())
@@ -132,10 +132,10 @@ class GoogleScraper(object):
             self.proxy.set_online()
         return response
 
-    def get_response(self):
-        '''gets http response for url or None.'''
+    def handle_response(self):
+        '''return http response for url or None.'''
         try:
-            return self._get_response()
+            return self.get_response()
         except requests.ConnectionError as e:
             print('connection failed {}'.format(e))
         except requests.Timeout as e:
@@ -146,9 +146,7 @@ class GoogleScraper(object):
         print('failed to get response from url {}'.format(self.url))
 
     def handle_status_code(self):
-        '''
-        gets http response or None if response status code not equal to 200
-        '''
+        '''return http response or None if status code not equal to 200'''
         if self.response.status_code == 200:
             print('status code 200 for {}'.format(self.url))
             if self.proxy:
@@ -164,9 +162,9 @@ class GoogleScraper(object):
             self.update_proxy()
 
     def do_request(self):
-        '''performs http request and handles exceptions'''
+        '''perform http request and handle exceptions'''
         for i in range(settings.MAX_RETRY):
-            self.response = self.get_response()
+            self.response = self.handle_response()
             if not self.response:
                 print('retrying for {} time'.format(i + 1))
                 continue
@@ -178,16 +176,16 @@ class GoogleScraper(object):
             break
 
     def get_links(self):
-        '''gets link array from parser and adjusts result count'''
+        '''get link array from parser and adjust result count'''
         self.links = self.parser.get_links()
         self.page_result_count = len(self.links)
 
     def get_end(self):
-        '''returns end result index'''
+        '''return end result index'''
         return self.start + self.page_result_count
 
     def create_page(self):
-        '''creates GooglePage entry in database'''
+        '''create GooglePage entry in database'''
         from .models import GooglePage
         self.page = GooglePage.objects.create(
             search=self.search,
@@ -202,7 +200,7 @@ class GoogleScraper(object):
         print('created google page {}'.format(self.page))
 
     def create_links(self):
-        '''creates GoogleLink entries in database'''
+        '''create GoogleLink entries in database'''
         from .models import GoogleLink
         links = []
         for i, link_params, in enumerate(self.links):
@@ -218,14 +216,14 @@ class GoogleScraper(object):
         )
 
     def is_request_failed(self):
-        '''checks for valid response'''
+        '''check for valid response'''
         if self.response:
             return False
         self.success = False
         return True
 
     def is_last_page(self):
-        '''checks whether we are on the last page of search results'''
+        '''check if we are on last page of search results'''
         if self.page.next_page:
             return
         print('reached last page for query {}'.format(self.search))
@@ -233,7 +231,7 @@ class GoogleScraper(object):
         return True
 
     def update_loop(self):
-        '''updates main scrape loop'''
+        '''update instance with new values'''
         self.url = self.page.next_page
         self.search_result_count += self.page_result_count
         self.start = self.get_end()
@@ -243,7 +241,7 @@ class GoogleScraper(object):
         )
 
     def update_search(self):
-        '''updates search object with newly computed values'''
+        '''update search record with new values'''
         self.search.set_result_count(self.search_result_count)
         self.search.set_success(self.success)
 

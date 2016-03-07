@@ -69,7 +69,7 @@ class Proxy(models.Model):
         return proxies.order_by('-scraper_count').first()
 
     def register(self):
-        '''increment scraper_count before http request'''
+        '''increment scraper count before http request'''
         self.scraper_count += 1
         self.save()
         print(
@@ -79,7 +79,7 @@ class Proxy(models.Model):
         )
 
     def unregister(self):
-        '''decrement scraper_count after http request'''
+        '''decrement scraper count after http request'''
         self.scraper_count -= 1
         self.save()
         print(
@@ -89,7 +89,7 @@ class Proxy(models.Model):
         )
 
     def set_online(self, do_save=True):
-        '''set proxy status to online'''
+        '''set status to online'''
         if not self.online:
             self.online = True
         self.date_online = timezone.now()
@@ -98,7 +98,7 @@ class Proxy(models.Model):
         print('proxy {} is online'.format(self))
 
     def unset_online(self, do_save=True):
-        '''set proxy status to offline'''
+        '''set status to offline'''
         if self.online is not False:
             self.online = False
             if do_save:
@@ -106,7 +106,7 @@ class Proxy(models.Model):
         print('proxy {} is not online'.format(self))
 
     def set_google_ban(self):
-        '''set proxy status to banned'''
+        '''set status to banned'''
         if not self.google_ban:
             self.google_ban = True
         self.date_google_ban = timezone.now()
@@ -114,20 +114,20 @@ class Proxy(models.Model):
         print('proxy {} is banned by google'.format(self))
 
     def unset_google_ban(self):
-        '''set proxy status to unbanned'''
+        '''set status to unbanned'''
         if self.google_ban is not False:
             self.google_ban = False
             self.save()
         print('proxy {} is not banned by google'.format(self))
 
     def set_speed(self, time):
-        '''set proxy speed to value'''
+        '''set speed to value'''
         self.speed = time
         self.save()
         print('proxy {} speed is {}'.format(self, self.speed))
 
     def unset_speed(self):
-        '''set proxy speed to None'''
+        '''set speed to None'''
         self.speed = None
         self.save()
 
@@ -202,7 +202,7 @@ class GoogleSearch(models.Model):
         super().save(*args, **kwargs)
 
     def set_success(self, value):
-        '''set google search success to value'''
+        '''set success to value'''
         self.success = value
         self.save()
         if self.success:
@@ -211,7 +211,7 @@ class GoogleSearch(models.Model):
             print('google search for query {} failed'.format(self.q))
 
     def set_result_count(self, count):
-        '''set google search result count to value'''
+        '''set result count to value'''
         self.result_count = count
         self.save()
         print('result count for google search {} is {}'.format(self.q, count))
