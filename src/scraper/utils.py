@@ -82,7 +82,7 @@ class GoogleScraper(object):
     '''follows next page and extracts links'''
 
     def __init__(self, search, user_agent=None, proxy=None):
-        self.success = False
+        self.success = None
         self.url = search.url
         self.search_result_count = 0
         self.page_result_count = 0

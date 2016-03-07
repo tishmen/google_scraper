@@ -205,7 +205,7 @@ class GoogleSearch(models.Model):
         '''set google search success to True'''
         self.success = value
         self.save()
-        if success:
+        if self.success:
             print('google search for query {} succeded'.format(self.q))
         else:
             print('google search for query {} failed'.format(self.q))
