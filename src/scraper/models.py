@@ -245,9 +245,10 @@ class GoogleSearch(models.Model):
 
     def search(self):
         '''search call on GoogleScraper object'''
-        scraper = GoogleScraper(
-            self, UserAgent.get_user_agent_string(), Proxy.get_proxy()
-        )
+        params = [self, UserAgent.get_user_agent_string()]
+        if settings.USE_PROXY:
+            params.append(Proxy.get_proxy())
+        scraper = GoogleScraper(*params)
         scraper.scrape()
 
 

@@ -57,7 +57,10 @@ class GooglePageInline(ReadOnlyInline):
     '''Google page inlined to Google search'''
 
     model = GooglePage
-    exclude = ['url', 'html', 'start', 'end', 'next_page']
+    exclude = [
+        'url', 'html', 'total_result_count', 'result_count', 'start', 'end',
+        'next_page'
+    ]
     readonly_fields = ['_url', 'date_added']
     extra = 0
     show_change_link = True
@@ -269,15 +272,12 @@ class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
                 [
                     'Results', {
                         'classes': ['collapse'],
-                        'fields': [
-                            'success', 'total_result_count', 'result_count'
-                        ]
+                        'fields': ['success', 'result_count']
                     }
                 ]
             ]
             self.readonly_fields = [
-                'q', 'cr', 'cd_min', 'cd_max', 'success', 'total_result_count',
-                'result_count'
+                'q', 'cr', 'cd_min', 'cd_max', 'success', 'result_count'
             ]
             self.inlines = [GooglePageInline]
         return super().change_view(request, object_id)
@@ -315,8 +315,13 @@ class GooglePageAdmin(NoInlineTitleAdmin, ReadOnlyAdmin):
     '''model admin for google page'''
 
     list_display = ['url', 'result_count', 'date_added']
-    fieldsets = [[None, {'fields': ['_url', '_html', 'result_count']}]]
-    readonly_fields = ['_url', '_html', 'result_count']
+    fieldsets = [
+        [
+            None,
+            {'fields': ['_url', '_html', 'total_result_count', 'result_count']}
+        ]
+    ]
+    readonly_fields = ['_url', '_html', 'total_result_count', 'result_count']
     inlines = [GoogleLinkInline]
 
     def _url(self, obj):

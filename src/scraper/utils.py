@@ -205,7 +205,7 @@ class GoogleScraper(object):
         from .models import GoogleLink
         links = []
         for i, link_params, in enumerate(self.links):
-            link_params.update({'page': self.page, 'rank': self.start + i + 1})
+            link_params.update({'page': self.page, 'rank': self.start + i})
             link = GoogleLink.objects.create(**link_params)
             print('created google link {}'.format(link))
             links.append(link)
@@ -219,8 +219,9 @@ class GoogleScraper(object):
     def is_request_failed(self):
         '''checks for valid response'''
         if self.response:
-            return True
+            return False
         self.search.unset_success()
+        return True
 
     def is_last_page(self):
         '''checks whether we are on the last page of search results'''
