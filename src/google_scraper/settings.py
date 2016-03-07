@@ -153,7 +153,7 @@ CELERY_ROUTES = {
 
 djcelery.setup_loader()
 
-USE_PROXY = False
+USE_PROXY = True
 
 PROXY_TIMEOUT = 10
 
