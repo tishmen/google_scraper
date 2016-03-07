@@ -1,0 +1,14 @@
+server {
+    listen 8001;
+    server_name 45.55.207.40;
+
+    access_log /home/milan/google_scraper/src/logs/nginx-access.log;
+    error_log /home/milan/google_scraper/src/logs/nginx-error.log;
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+
+    location / {
+            include proxy_params;
+            proxy_pass http://unix:/tmp/google_scraper.sock;
+    }
+}
