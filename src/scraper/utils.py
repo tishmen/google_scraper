@@ -82,6 +82,7 @@ class GoogleScraper(object):
     '''follows next page and extracts links'''
 
     def __init__(self, search, user_agent=None, proxy=None):
+        self.success = False
         self.url = search.url
         self.search_result_count = 0
         self.page_result_count = 0
@@ -220,7 +221,7 @@ class GoogleScraper(object):
         '''checks for valid response'''
         if self.response:
             return False
-        self.search.unset_success()
+        self.success = False
         return True
 
     def is_last_page(self):
@@ -228,7 +229,7 @@ class GoogleScraper(object):
         if self.page.next_page:
             return
         print('reached last page for query {}'.format(self.search))
-        self.search.set_success()
+        self.success = True
         return True
 
     def update_loop(self):
@@ -236,6 +237,7 @@ class GoogleScraper(object):
         self.url = self.page.next_page
         self.search_result_count += self.page_result_count
         self.start = self.get_end()
+        self.success = True
 
     def scrape(self):
         '''main scrape call'''
@@ -256,3 +258,4 @@ class GoogleScraper(object):
                 )
             )
         self.search.set_result_count(self.search_result_count)
+        self.search.set_success(self.success)

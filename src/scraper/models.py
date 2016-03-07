@@ -201,17 +201,14 @@ class GoogleSearch(models.Model):
             self.cd_max = date.today()
         super().save(*args, **kwargs)
 
-    def set_success(self):
+    def set_success(self, value):
         '''set google search success to True'''
-        self.success = True
+        self.success = value
         self.save()
-        print('google search for query {} succeded'.format(self.q))
-
-    def unset_success(self):
-        '''set google search success to False'''
-        self.success = False
-        self.save()
-        print('google search for query {} failed'.format(self.q))
+        if success:
+            print('google search for query {} succeded'.format(self.q))
+        else:
+            print('google search for query {} failed'.format(self.q))
 
     def set_result_count(self, count):
         '''set google search result count to value'''
