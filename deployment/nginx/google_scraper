@@ -7,6 +7,14 @@ server {
 
     location = /favicon.ico { access_log off; log_not_found off; }
 
+    location /static/ {
+        alias /home/milan/static/;
+    }
+
+    location /media {
+        alias /home/milan/media/;
+    }
+
     location / {
             include proxy_params;
             proxy_pass http://unix:/tmp/google_scraper.sock;
