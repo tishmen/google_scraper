@@ -1,6 +1,8 @@
 import random
 import time
 
+from urllib.parse import urlparse, parse_qs
+
 import htmlmin
 import requests
 
@@ -18,11 +20,11 @@ class GoogleParser(object):
 
     def parse_links(self):
         '''return result nodes that contain snippet node'''
-        return [node.parent for node in self.soup.select('.srg .rc')]
+        return [node.parent for node in self.soup.select('.g .s')]
 
     def parse_url(self, node):
         '''return title url from result node'''
-        return node.a['href']
+        return parse_qs(urlparse(node.a['href']).query)['q'][0]
 
     def parse_title(self, node):
         '''return title text from result node'''
