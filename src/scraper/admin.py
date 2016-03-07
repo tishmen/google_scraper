@@ -1,6 +1,3 @@
-import inspect
-import itertools
-
 from import_export import resources
 from import_export.admin import ImportMixin
 
@@ -106,27 +103,6 @@ class GoogleLinkInline(ReadOnlyInline):
     _url.allow_tags = True
 
 
-class NoInlineTitleAdmin(admin.ModelAdmin):
-
-    '''title removed from tabular inline entry'''
-
-    # http://stackoverflow.com/questions/5086537/how-to-omit-object-name-from-djangos-tabularinline-admin-view
-    def render_change_form(self, request, context, *args, **kwargs):
-        def get_queryset(original_func):
-            def wrapped_func():
-                if inspect.stack()[1][3] == '__iter__':
-                    return itertools.repeat(None)
-                return original_func()
-            return wrapped_func
-        for formset in context['inline_admin_formsets']:
-            formset.formset.get_queryset = get_queryset(
-                formset.formset.get_queryset
-            )
-        return super().render_change_form(
-            request, context, *args, **kwargs
-        )
-
-
 class ReadOnlyAdmin(admin.ModelAdmin):
 
     '''model admin with add and delete permissions disabled'''
@@ -223,7 +199,7 @@ class ProxyAdmin(ImportMixin, admin.ModelAdmin):
 
 
 @admin.register(GoogleSearch)
-class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
+class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
 
     '''model admin for google search'''
 
@@ -310,7 +286,7 @@ class GoogleSearchAdmin(ImportMixin, NoInlineTitleAdmin):
 
 
 @admin.register(GooglePage)
-class GooglePageAdmin(NoInlineTitleAdmin, ReadOnlyAdmin):
+class GooglePageAdmin(ReadOnlyAdmin):
 
     '''model admin for google page'''
 
