@@ -3,3 +3,7 @@ __pycache__
 *.sublime-project
 *.sublime-workspace
 data
+logs
+celerybeat-schedule
+celerybeat.pid
+celeryev.pid
