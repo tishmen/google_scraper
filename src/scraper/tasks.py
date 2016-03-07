@@ -1,6 +1,9 @@
 from celery import shared_task
+from celery.utils.log import get_task_logger
 
 from .models import Proxy
+
+logger = get_task_logger(__name__)
 
 
 @shared_task(bind=True)
@@ -26,7 +29,9 @@ def online_check_task(self, proxies=None):
     '''process online check tasks async'''
     if not proxies:
         proxies = Proxy.objects.all()
-    print('starting online_check_task for {} proxies'.format(proxies.count()))
+    logger.info(
+        'starting online_check_task for {} proxies'.format(proxies.count())
+    )
     for proxy in proxies:
         _online_check_task.delay(proxy)
 
@@ -36,7 +41,7 @@ def google_ban_check_task(self, proxies=None):
     '''process google ban check tasks async'''
     if not proxies:
         proxies = Proxy.objects.all()
-    print(
+    logger.info(
         'starting google_ban_check_task for {} proxies'.format(proxies.count())
     )
     for proxy in proxies:
@@ -44,12 +49,10 @@ def google_ban_check_task(self, proxies=None):
 
 
 @shared_task(bind=True)
-def search_task(self, google_searches):
+def search_task(self, searches):
     '''process search tasks async'''
-    print(
-        'starting search_task for {} google searches'.format(
-            google_searches.count()
-        )
+    logger.info(
+        'starting search_task for {} google searches'.format(searches.count())
     )
-    for google_search in google_searches:
-        _search_task.delay(google_search)
+    for search in searches:
+        _search_task.delay(search)

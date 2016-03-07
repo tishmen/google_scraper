@@ -1,3 +1,4 @@
+import logging
 import random
 import time
 
@@ -9,6 +10,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 class GoogleParser(object):
@@ -85,7 +88,7 @@ class GoogleScraper(object):
 
     def sleep(self, seconds):
         '''sleep n seconds'''
-        print('sleeping for {} seconds'.format(seconds))
+        logging.debug('sleeping for {} seconds'.format(seconds))
         time.sleep(seconds)
 
     def update_proxy(self):
@@ -93,7 +96,9 @@ class GoogleScraper(object):
         from .models import Proxy
         old_proxy = self.proxy
         self.proxy = Proxy.get_proxy()
-        print('switching proxy from {} to {}'.format(old_proxy, self.proxy))
+        logging.info(
+            'switching proxy from {} to {}'.format(old_proxy, self.proxy)
+        )
         self.sleep(
             random.uniform(
                 settings.MIN_REQUEST_SLEEP, settings.MAX_REQUEST_SLEEP
@@ -104,17 +109,17 @@ class GoogleScraper(object):
         '''return request call parameters to be unpacked.'''
         params = {'url': self.url, 'timeout': settings.REQUEST_TIMEOUT}
         if self.user_agent:
-            print('using user agent {}'.format(self.user_agent))
+            logging.info('using user agent {}'.format(self.user_agent))
             params['headers'] = {'User-Agent': self.user_agent}
         else:
-            print('not using user agent')
+            logging.debug('not using user agent')
         if self.proxy:
-            print('using proxy {}'.format(self.proxy))
+            logging.info('using proxy {}'.format(self.proxy))
             params['proxies'] = {
                 'http': 'http://{}:{}'.format(self.proxy.host, self.proxy.port)
             }
         else:
-            print('not using proxy')
+            logging.debug('not using proxy')
         return params
 
     def get_response(self):
@@ -126,7 +131,7 @@ class GoogleScraper(object):
             self.proxy.set_online()
         else:
             response = requests.get(**self.get_request_params())
-        print('got response from url {}'.format(self.url))
+        logging.info('got response from url {}'.format(self.url))
         return response
 
     def handle_response(self):
@@ -134,22 +139,22 @@ class GoogleScraper(object):
         try:
             return self.get_response()
         except requests.ConnectionError as e:
-            print('connection failed {}'.format(e))
+            logging.warning('connection failed {}'.format(e))
         except requests.Timeout as e:
-            print('connection timeout {}'.format(e))
+            logging.warning('connection timeout {}'.format(e))
         if self.proxy:
             self.proxy.unset_online()
             self.update_proxy()
-        print('failed to get response from url {}'.format(self.url))
+        logging.warning('failed to get response from url {}'.format(self.url))
 
     def handle_status_code(self):
         '''return http response or None if status code not equal to 200'''
         if self.response.status_code == 200:
-            print('status code 200 for {}'.format(self.url))
+            logging.info('status code 200 for {}'.format(self.url))
             if self.proxy:
                 self.proxy.unset_google_ban()
             return self.response
-        print(
+        logging.warning(
             'bad status code {} for {}'.format(
                 self.response.status_code, self.url
             )
@@ -163,11 +168,11 @@ class GoogleScraper(object):
         for i in range(settings.MAX_RETRY):
             self.response = self.handle_response()
             if not self.response:
-                print('retrying for {} time'.format(i + 1))
+                logging.warning('retrying for {} time'.format(i + 1))
                 continue
             self.response = self.handle_status_code()
             if not self.response:
-                print('retrying for {} time'.format(i + 1))
+                logging.warning('retrying for {} time'.format(i + 1))
                 continue
             self.parser = GoogleParser(self.response)
             break
@@ -193,7 +198,7 @@ class GoogleScraper(object):
             end=self.get_end(),
             next_page=self.parser.get_next_page()
         )
-        print('created google page {}'.format(self.page))
+        logging.debug('created google page {}'.format(self.page))
 
     def create_links(self):
         '''create GoogleLink entries in database'''
@@ -202,10 +207,10 @@ class GoogleScraper(object):
         for i, link_params, in enumerate(self.links):
             link_params.update({'page': self.page, 'rank': self.start + i})
             link = GoogleLink.objects.create(**link_params)
-            print('created google link {}'.format(link))
+            logging.debug('created google link {}'.format(link))
             links.append(link)
         self.links = links
-        print(
+        logging.info(
             'created {} google links for google page {}'.format(
                 len(self.links), self.page
             )
@@ -222,7 +227,7 @@ class GoogleScraper(object):
         '''check if we are on last page of search results'''
         if self.page.next_page:
             return
-        print('reached last page for query {}'.format(self.search))
+        logging.debug('reached last page for query {}'.format(self.search))
         self.success = True
         return True
 
@@ -243,7 +248,7 @@ class GoogleScraper(object):
 
     def scrape(self):
         '''main scrape call'''
-        print('scraping for query {}'.format(self.search))
+        logging.debug('scraping for query {}'.format(self.search))
         for _ in range(settings.MAX_PAGE):
             self.do_request()
             if self.is_request_failed():

@@ -1,3 +1,4 @@
+import logging
 import random
 import socket
 import string
@@ -14,6 +15,8 @@ from django.utils import timezone
 
 from .utils import GoogleScraper
 from .choices import *
+
+logger = logging.getLogger(__name__)
 
 
 class UserAgent(models.Model):
@@ -32,7 +35,7 @@ class UserAgent(models.Model):
         try:
             return UserAgent.objects.order_by('?').first().string
         except AttributeError:
-            print('no user agents in database')
+            logger.info('no user agents in database')
 
 
 class Proxy(models.Model):
@@ -72,7 +75,7 @@ class Proxy(models.Model):
         '''increment scraper count before http request'''
         self.scraper_count += 1
         self.save()
-        print(
+        logger.debug(
             'proxy {} is connected to {} scrapers'.format(
                 self, self.scraper_count
             )
@@ -82,7 +85,7 @@ class Proxy(models.Model):
         '''decrement scraper count after http request'''
         self.scraper_count -= 1
         self.save()
-        print(
+        logger.debug(
             'proxy {} is connected to {} scrapers'.format(
                 self, self.scraper_count
             )
@@ -94,14 +97,14 @@ class Proxy(models.Model):
             self.online = True
         self.date_online = timezone.now()
         self.save()
-        print('proxy {} is online'.format(self))
+        logger.info('proxy {} is online'.format(self))
 
     def unset_online(self):
         '''set status to offline'''
         if self.online is not False:
             self.online = False
             self.save()
-        print('proxy {} is not online'.format(self))
+        logger.debug('proxy {} is not online'.format(self))
 
     def set_google_ban(self):
         '''set status to banned'''
@@ -109,20 +112,20 @@ class Proxy(models.Model):
             self.google_ban = True
         self.date_google_ban = timezone.now()
         self.save()
-        print('proxy {} is banned by google'.format(self))
+        logger.info('proxy {} is banned by google'.format(self))
 
     def unset_google_ban(self):
         '''set status to unbanned'''
         if self.google_ban is not False:
             self.google_ban = False
             self.save()
-        print('proxy {} is not banned by google'.format(self))
+        logger.debug('proxy {} is not banned by google'.format(self))
 
     def set_speed(self, time):
         '''set speed to value'''
         self.speed = time
         self.save()
-        print('proxy {} speed is {}'.format(self, self.speed))
+        logger.debug('proxy {} speed is {}'.format(self, self.speed))
 
     def unset_speed(self):
         '''set speed to None'''
@@ -131,7 +134,7 @@ class Proxy(models.Model):
 
     def online_check(self):
         '''create connection to the proxy server and record status'''
-        print('starting online check for {}'.format(self))
+        logger.debug('starting online check for {}'.format(self))
         start = time.time()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(settings.PROXY_TIMEOUT)
@@ -148,7 +151,7 @@ class Proxy(models.Model):
         self.online_check()
         if not self.online:
             return
-        print('starting google ban check for {}'.format(self))
+        logger.debug('starting google ban check for {}'.format(self))
         q = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
         search = GoogleSearch.objects.create(q=q)
         scraper = GoogleScraper(
@@ -161,7 +164,7 @@ class Proxy(models.Model):
         '''query geoip database for proxy country'''
         if self.country:
             return
-        print('starting geoip check for {}'.format(self))
+        logger.debug('starting geoip check for {}'.format(self))
         geoip = GeoIP.open(
             '/usr/local/share/GeoIP/GeoLiteCity.dat', GeoIP.GEOIP_STANDARD
         )
@@ -204,15 +207,17 @@ class GoogleSearch(models.Model):
         self.success = value
         self.save()
         if self.success:
-            print('google search for query {} succeded'.format(self.q))
+            logger.info('google search for query {} succeded'.format(self.q))
         else:
-            print('google search for query {} failed'.format(self.q))
+            logger.info('google search for query {} failed'.format(self.q))
 
     def set_result_count(self, count):
         '''set result count to value'''
         self.result_count = count
         self.save()
-        print('result count for google search {} is {}'.format(self.q, count))
+        logger.info(
+            'result count for google search {} is {}'.format(self.q, count)
+        )
 
     def get_query_params(self):
         '''return query params to be added to google search url'''

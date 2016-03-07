@@ -124,7 +124,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Europe/Skopje'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
@@ -137,6 +137,28 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+# logging
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
 
 
 # bootstrap
@@ -158,6 +180,15 @@ BROKER_URL = 'redis://localhost:6379/0'
 CELERY_SEND_EVENTS = True
 
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+
+CELERY_ROUTES = {
+    'scraper.tasks._online_check_task': {'queue': 'google_scraper'},
+    'scraper.tasks._google_ban_check_task': {'queue': 'google_scraper'},
+    'scraper.tasks._search_task': {'queue': 'google_scraper'},
+    'scraper.tasks.online_check_task': {'queue': 'google_scraper'},
+    'scraper.tasks.google_ban_check_task': {'queue': 'google_scraper'},
+    'scraper.tasks.search_task': {'queue': 'google_scraper'}
+}
 
 djcelery.setup_loader()
 
