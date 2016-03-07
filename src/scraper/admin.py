@@ -287,6 +287,7 @@ class GooglePageAdmin(ReadOnlyAdmin):
 
     '''model admin for google page'''
 
+    search_fields = ['url']
     list_display = ['url', 'result_count', 'date_added']
     fieldsets = [
         [
