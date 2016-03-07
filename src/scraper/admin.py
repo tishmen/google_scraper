@@ -236,7 +236,7 @@ class GoogleSearchAdmin(ImportMixin, admin.ModelAdmin):
         self.readonly_fields = []
         self.inlines = []
         obj = GoogleSearch.objects.get(id=object_id)
-        if obj.result_count:
+        if obj.googlepage_set.count():
             self.fieldsets = [
                 [None, {'fields': ['q']}],
                 [
