@@ -101,7 +101,11 @@ class GoogleScraper(object):
         old_proxy = self.proxy
         self.proxy = Proxy.get_proxy()
         print('switching proxy from {} to {}'.format(old_proxy, self.proxy))
-        self.sleep(settings.RETRY_TIMEOUT)
+        self.sleep(
+            random.uniform(
+                settings.MIN_REQUEST_SLEEP, settings.MAX_REQUEST_SLEEP
+            )
+        )
 
     def get_request_params(self):
         '''returns request call parameters to be unpacked.'''
@@ -160,7 +164,7 @@ class GoogleScraper(object):
 
     def do_request(self):
         '''performs http request and handles exceptions'''
-        for i in range(settings.MAX_RETRIES):
+        for i in range(settings.MAX_RETRY):
             self.response = self.get_response()
             if not self.response:
                 print('retrying for {} time'.format(i + 1))
@@ -245,5 +249,9 @@ class GoogleScraper(object):
             if self.is_last_page():
                 break
             self.update_loop()
-            self.sleep(random.uniform(settings.MIN_SLEEP, settings.MAX_SLEEP))
+            self.sleep(
+                random.uniform(
+                    settings.MIN_RETRY_SLEEP, settings.MAX_RETRY_SLEEP
+                )
+            )
         self.search.set_result_count(self.search_result_count)

@@ -227,8 +227,8 @@ class GoogleSearch(models.Model):
             'hl': 'en',
             'nfpr': '1'
         }
-        if settings.RESULTS_PER_PAGE != 10:
-            params['num'] = str(settings.RESULTS_PER_PAGE)
+        if settings.RESULT_PER_PAGE != 10:
+            params['num'] = str(settings.RESULT_PER_PAGE)
         if self.cd_min and self.cd_max:
             cd_min = self.cd_min.strftime('%m/%d/%Y')
             cd_max = self.cd_max.strftime('%m/%d/%Y')
