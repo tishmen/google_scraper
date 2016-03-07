@@ -114,6 +114,7 @@ class GoogleScraper(object):
     def get_response(self):
         '''fetch http response for url'''
         if self.proxy:
+            print('using proxy {}'.format(self.proxy))
             self.proxy.register()
             response = requests.get(**self.get_request_params())
             self.proxy.unregister()
