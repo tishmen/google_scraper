@@ -24,7 +24,10 @@ class GoogleParser(object):
 
     def parse_url(self, node):
         '''return title url from result node'''
-        return parse_qs(urlparse(node.a['href']).query)['q'][0]
+        try:
+            return parse_qs(urlparse(node.a['href']).query)['q'][0]
+        except KeyError:
+            return node.a['href']
 
     def parse_title(self, node):
         '''return title text from result node'''
